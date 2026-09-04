@@ -2107,18 +2107,54 @@ eq(
   occurrences(ACTIONS_CODE, "requireArea('blogs', '/admin')"),
   occurrences(ACTIONS_CODE, 'export async function'),
 );
+/**
+ * Every function in the actions file, sliced from the file ITSELF rather than
+ * from a list of names.
+ *
+ * That is the whole point: the hand-written list this replaced covered three
+ * doors, then eleven more landed beside them and four of the new ones were
+ * simply not swept. A door added by a later task is covered here without
+ * anybody remembering to add it, and a door RENAMED does not quietly fall out.
+ *
+ * Non-exported helpers are in too, because the work of a door routinely lives
+ * in one (`prepareSave` holds most of what an autosave does, and
+ * `writeSchedule` holds both schedule doors).
+ */
+const FN_SLICES: { name: string; exported: boolean; code: string }[] = (() => {
+  const re = /\n(export )?async function (\w+)[(<]/g;
+  const heads = [...ACTIONS_SRC.matchAll(re)].map((m) => ({
+    at: m.index,
+    exported: m[1] !== undefined,
+    name: m[2],
+  }));
+  return heads.map((head, i) => ({
+    name: head.name,
+    exported: head.exported,
+    code: stripComments(ACTIONS_SRC.slice(head.at, heads[i + 1]?.at ?? ACTIONS_SRC.length)),
+  }));
+})();
+const fnNamed = (name: string) => FN_SLICES.find((fn) => fn.name === name)?.code ?? '';
+// Fixture guards: an empty or truncated sweep would make every assertion built
+// on it vacuously true.
+ok('found every function in the actions file (fixture guard)', FN_SLICES.length >= 18);
+eq(
+  'and every exported one, matching the file’s own count',
+  FN_SLICES.filter((fn) => fn.exported).length,
+  occurrences(ACTIONS_CODE, 'export async function'),
+);
+for (const name of ['createPost', 'saveDraft', 'savePost', 'publishPost', 'restorePost'] as const) {
+  ok(`the sweep found ${name} (fixture guard)`, fnNamed(name).length > 200);
+}
+
 // The count above says the gate is THERE; it cannot say it runs first. Moving
 // it inside a try swallows requireArea's redirect into reportError and hands a
 // member `{ ok: false, error: 'server' }` where they should have been sent to
 // /admin, which looks exactly like a broken button.
-for (const [label, code] of [
-  ['createPost', CREATE_POST_CODE],
-  ['saveDraft', SAVE_DRAFT_CODE],
-  ['savePost', SAVE_POST_CODE],
-] as const) {
-  const iGate = code.indexOf("requireArea('blogs', '/admin')");
-  const iTry = code.indexOf('try {');
-  ok(`${label} gates FIRST and OUTSIDE its try`, iGate >= 0 && iTry > iGate);
+for (const fn of FN_SLICES) {
+  if (!fn.exported) continue;
+  const iGate = fn.code.indexOf("requireArea('blogs', '/admin')");
+  const iTry = fn.code.indexOf('try {');
+  ok(`${fn.name} gates FIRST and OUTSIDE its try`, iGate >= 0 && iTry > iGate);
 }
 ok(
   'no non-async value export (a "use server" module may export only async functions)',
@@ -2621,23 +2657,103 @@ const AMEND_DOOR = actionRegion(
 // savePost's.
 const RESTORE_REVISION = actionRegion('export async function restoreRevision(', '', 'restoreRevision');
 
-// Every exported door gates on the area FIRST and OUTSIDE its try, or
-// requireArea's redirect is swallowed by the catch and the member gets
-// `{ ok: false, error: 'server' }` where they should have been sent to /admin.
-for (const [label, code] of [
-  ['publishPost', PUBLISH_DOOR],
-  ['unschedulePost', UNSCHEDULE_DOOR],
-  ['unpublishPost', UNPUBLISH_DOOR],
-  ['trashPost', TRASH_DOOR],
-  ['restorePost', RESTORE_DOOR],
-  ['purgePost', PURGE_DOOR],
-  ['amendPublishedDate', AMEND_DOOR],
-  ['restoreRevision', RESTORE_REVISION],
-] as const) {
-  const iGate = code.indexOf("requireArea('blogs', '/admin')");
-  const iTry = code.indexOf('try {');
-  ok(`${label} gates FIRST and OUTSIDE its try`, iGate >= 0 && iTry > iGate);
+// (The "gates FIRST and OUTSIDE its try" sweep is not repeated here: §8's now
+// runs over every function the file declares, derived from the file, so these
+// eleven doors and any added later are covered by it without a second list.)
+
+// ── A door accepts only the status it is FOR ────────────────────────────────
+//
+// `transitionProblem` answers "may this post move from A to B", and the escape
+// at the top of it — `from === 'trash' && to === restoreTarget(history)` — is a
+// RESTORE permission. Three doors have a target that escape can equal, so a
+// BINNED post passes every gate they ask and the write then either violates
+// `blog_posts_trash_stamp` (a raw 23514 on a button that looked enabled) or,
+// for the restore door, silently unpublishes a live article: `restoreTarget`
+// reads history, answers `archived`, and `published -> archived` is a legal
+// pair. Nothing here pinned that until this round, and one assertion of this
+// shape would have caught both.
+
+// COMPUTED from transitionProblem itself, not listed: a fourth restore target
+// added later widens this set on its own and drags the sweep below with it.
+const ESCAPE_TARGETS = BLOG_POST_STATUSES.filter((to) =>
+  [false, true].some((everPublished) => transitionProblem('trash', to, { everPublished }) === null),
+);
+eq('the trash escape reaches exactly the two restore targets', [...ESCAPE_TARGETS].sort(), [
+  'archived',
+  'draft',
+]);
+
+/** The status a statement moves a post to: a literal where it has one, the
+ *  sentinel where the CALLER decides (`status,` is a parameter), and null
+ *  where the statement moves no status at all. Read off the statement's own
+ *  source, so the table cannot drift from the code it describes. */
+const CALLER_DECIDED = '(caller)';
+const statementTarget = (code: string): string | null =>
+  /status: '(\w+)'/.exec(code)?.[1] ?? (/\bstatus,/.test(code) ? CALLER_DECIDED : null);
+
+const STATEMENT_TARGETS: [string, string | null][] = [
+  ['publishPostRow', statementTarget(PUBLISH_ROW)],
+  ['schedulePostRow', statementTarget(SCHEDULE_ROW)],
+  ['unschedulePostRow', statementTarget(UNSCHEDULE_ROW)],
+  ['unpublishPostRow', statementTarget(UNPUBLISH_ROW)],
+  ['amendPublishedAtRow', statementTarget(AMEND_ROW)],
+  ['trashPostRow', statementTarget(TRASH_ROW)],
+  ['restorePostRow', statementTarget(RESTORE_ROW)],
+  ['trashPostRows', statementTarget(TRASH_ROWS)],
+  ['restorePostRows', statementTarget(RESTORE_ROWS)],
+];
+eq(
+  'every transition statement declares a target, or leaves it to the caller',
+  STATEMENT_TARGETS.map(([name, target]) => `${name}=${target ?? 'none'}`),
+  [
+    'publishPostRow=published',
+    'schedulePostRow=scheduled',
+    'unschedulePostRow=draft',
+    'unpublishPostRow=archived',
+    'amendPublishedAtRow=none',
+    'trashPostRow=trash',
+    `restorePostRow=${CALLER_DECIDED}`,
+    'trashPostRows=trash',
+    `restorePostRows=${CALLER_DECIDED}`,
+  ],
+);
+
+// Swept over the whole file rather than a list of doors, so the requirement is
+// INHERITED: a door added later that writes to `draft` or `archived`, or that
+// hands the target in from the caller, fails here until it checks its source.
+let exposedSeen = 0;
+for (const fn of FN_SLICES) {
+  const targets = STATEMENT_TARGETS.filter(([stmt]) => fn.code.includes(`${stmt}(`)).map(
+    ([, target]) => target,
+  );
+  const exposed = targets.some(
+    (target) =>
+      target === CALLER_DECIDED ||
+      (target !== null && (ESCAPE_TARGETS as readonly string[]).includes(target)),
+  );
+  if (!exposed) continue;
+  exposedSeen++;
+  // `row.status !== 'x'` on a single door, `post.status === 'x'` on a bulk one:
+  // either says which status this door is for.
+  const iSource = fn.code.search(/\.status [!=]== '\w+'/);
+  const iWrite = Math.min(
+    ...STATEMENT_TARGETS.map(([stmt]) => fn.code.indexOf(`${stmt}(`)).filter((i) => i >= 0),
+  );
+  ok(`${fn.name} checks its source status explicitly`, iSource >= 0);
+  ok(`${fn.name} checks it BEFORE it writes`, iSource >= 0 && iSource < iWrite);
 }
+// Guards the sweep itself: with `exposed` always false every door would be
+// skipped and the loop would pass by testing nothing. Three doors are exposed
+// today (unschedule, unpublish, and both restore doors, of which the bulk one
+// counts once).
+eq('the sweep exercised the exposed branch', exposedSeen, 4);
+// And the second layer on the one door where the mistake is a SILENT UNPUBLISH
+// rather than a refused write: the statement carries the predicate too, which
+// its bulk sibling has done since it was written.
+ok(
+  'restorePostRow refuses a row that is not in the bin',
+  /eq\(blogPosts\.status, 'trash'\)/.test(RESTORE_ROW),
+);
 
 // THE THREE PLACES. Two typed `Date` writes (the revision column and the
 // statement) and one ISO string (the snapshot the public reads its date off).
@@ -2664,10 +2780,24 @@ ok(
   'publishPost decides the "Updated" stamp through contentChanged',
   /contentChanged\(previouslyPublished, base\)/.test(PUBLISH_DOOR),
 );
+// Rewritten this round. The version here asserted `!includes('contentChanged(
+// view')`, which could never go red: `contentChanged` takes a
+// BlogSnapshotView, so that call would be a compile error rather than a
+// failing assertion. What is actually worth pinning is that ONE read answers
+// both questions — whether the article moved, and what the public fingerprint
+// was — because two reads is how they come to disagree about what the visitor
+// had, and reading the working row instead would make an SEO-only republish
+// look like a content change on any post that had been saved since.
 ok(
-  'and compares against the PUBLISHED snapshot, never the working copy',
-  PUBLISH_DOOR.includes('await publishedSnapshot(input.id)') &&
-    !PUBLISH_DOOR.includes('contentChanged(view'),
+  'one read of the published revision answers both the stamp and the ping',
+  /const previouslyPublished = await publishedSnapshot\(input\.id\);/.test(PUBLISH_DOOR) &&
+    /beforeRef\(identityOf\(post\), previouslyPublished\)/.test(PUBLISH_DOOR) &&
+    occurrences(PUBLISH_DOOR, 'publishedSnapshot(') === 1,
+);
+ok(
+  'and that read really is the PUBLISHED revision, not the working row',
+  /publishedRevisionsFor\(\[id\]\)/.test(fnNamed('publishedSnapshot')) &&
+    /\?\.snapshot \?\? null/.test(fnNamed('publishedSnapshot')),
 );
 
 // Ordering, because neon-http has no transactions.
@@ -2681,12 +2811,38 @@ ok(
     iRelated >= 0 && iEntities >= 0 && iRevision > iRelated && iRevision > iEntities,
   );
   ok('publishPost writes the revision before the guarded UPDATE', iUpdate > iRevision);
+}
+
+// EVERY door that writes a revision before its UPDATE, swept from the file
+// rather than listed. There are two failure paths, not one: the lost race
+// (`next === null`) and a THROW — a connection blip, or a CHECK a door above
+// missed. Handling only the first leaves a permanent row in an immutable
+// history describing something that never happened, which the revisions screen
+// renders as fact and a restore would replay. Three doors had exactly that hole
+// until this round, and a per-door list is how the next one gets it too.
+let revisionWriters = 0;
+for (const fn of FN_SLICES) {
+  if (!fn.code.includes('await insertRevisionOnce(')) continue;
+  revisionWriters++;
   eq(
-    'publishPost takes its revision back out on both failure paths',
-    occurrences(PUBLISH_DOOR, 'discardRevision(revision.id)'),
+    `${fn.name} takes its revision back out on BOTH failure paths`,
+    occurrences(fn.code, 'discardRevision(revision.id)'),
     2,
   );
+  // Ordered, not merely present: `includes` alone stays green with the return
+  // written above the delete, which is the mistake being guarded against.
+  const iCatch = fn.code.indexOf('} catch (dbError) {');
+  const iConflict = fn.code.indexOf("return { ok: false, error: 'conflict' }");
+  const iThrowClean = fn.code.indexOf('discardRevision(revision.id)');
+  ok(`${fn.name} wraps its guarded UPDATE in a catch`, iCatch >= 0 && iCatch < iConflict);
+  ok(`${fn.name} cleans up before it reports`, iThrowClean >= 0 && iThrowClean < iConflict);
+  // Through the guarded wrapper, never the raw statement: an unguarded delete
+  // that throws turns a recoverable conflict into a server error.
+  ok(`${fn.name} cleans up through discardRevision`, !fn.code.includes('deleteRevision('));
 }
+// savePost, publishPost, writeSchedule, unpublishPost, amendPublishedDate and
+// restoreRevision. Without this the loop would pass by testing nothing.
+eq('the sweep found every revision-writing door', revisionWriters, 6);
 // A post that links to one you are about to publish next is ordinary. A
 // refusal here would make the writer publish them in an order the tool chose.
 ok(
@@ -2755,7 +2911,19 @@ ok('restorePost resolves its target through restoreTarget', RESTORE_DOOR.include
     'restorePosts',
   );
   ok('restorePosts does too', bulk.includes('restoreTarget('));
-  ok('and expresses it in JS rather than SQL', !bulk.includes('case when') && !bulk.includes('sql`'));
+  // Tightened this round. The version here forbade `case when` and a `sql`
+  // template, which nothing in an actions file tends toward. What the code
+  // could plausibly drift into is the tidier-looking ONE call for the whole
+  // selection, with the target decided in SQL — and that is exactly where the
+  // rule would stop living in blogFields.ts. So the split itself is what gets
+  // pinned: group by restoreTarget, then one statement per group.
+  const iGroup = bulk.indexOf('byTarget.set(');
+  const iLoop = bulk.indexOf('for (const [target, group] of byTarget)');
+  const iCall = bulk.indexOf('restorePostRows(');
+  ok(
+    'restorePosts groups by restoreTarget and writes one statement per group',
+    iGroup >= 0 && iLoop > iGroup && iCall > iLoop,
+  );
 }
 // A selection over the cap is REFUSED, never sliced. A silent truncation
 // returns a count smaller than the selection with no way to tell "already in

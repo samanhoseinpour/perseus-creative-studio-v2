@@ -362,17 +362,25 @@ type BlogTransitionUpdate = {
  * transition split across two statements would offer the database a half-built
  * row in between and be refused outright. Each exported wrapper below therefore
  * names every column its own move touches, in one `.set()`.
+ *
+ * `also` is an extra predicate for a move that has a SOURCE STATUS as well as a
+ * target. The version guard already refuses a row somebody else moved, so this
+ * is a second lock rather than the only one, and the readable refusal still
+ * belongs in the door: a caller meeting this gets `null`, which reads as a
+ * conflict, and "somebody else got there first" is not the sentence a member
+ * needs when the post was never in the bin to begin with.
  */
 async function guardedTransition(
   db: BlogDb,
   id: string,
   version: number,
   columns: BlogTransitionUpdate & BlogWorkingUpdate,
+  also?: SQL,
 ): Promise<number | null> {
   const rows = await db
     .update(blogPosts)
     .set({ ...columns, version: sql`${blogPosts.version} + 1`, updatedAt: new Date() })
-    .where(and(eq(blogPosts.id, id), eq(blogPosts.version, version)))
+    .where(and(eq(blogPosts.id, id), eq(blogPosts.version, version), also))
     .returning({ version: blogPosts.version });
   return rows[0]?.version ?? null;
 }
@@ -530,6 +538,14 @@ export function trashPostRow(
  * Lift one post out of the bin, to the status its own history decides
  * (`restoreTarget` in blogFields.ts, resolved by the caller). `trashed_at`
  * clears in the same statement for the equivalence CHECK's sake.
+ *
+ * `status = 'trash'` IS PART OF THE WHERE, and it is the half that stops this
+ * from being a silent unpublish. The target comes from history, so on a LIVE
+ * post `restoreTarget` answers `archived` and every layer above would let it
+ * through: `published -> archived` is a legal pair, so `transitionProblem`
+ * returns null, and the door's own audit row would read "restored from Trash"
+ * over a post that was never in it. `restorePostRows` has carried this
+ * predicate since it was written; the asymmetry was the bug.
  */
 export function restorePostRow(
   db: BlogDb,
@@ -537,7 +553,13 @@ export function restorePostRow(
   version: number,
   status: BlogPostRow['status'],
 ): Promise<number | null> {
-  return guardedTransition(db, id, version, { status, trashedAt: null });
+  return guardedTransition(
+    db,
+    id,
+    version,
+    { status, trashedAt: null },
+    eq(blogPosts.status, 'trash'),
+  );
 }
 
 /* -------------------------------------------------------------------------- */

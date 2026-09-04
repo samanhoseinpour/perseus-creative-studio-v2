@@ -1309,6 +1309,18 @@ export async function unschedulePost(id: string, version: number): Promise<BlogM
       everPublished: row.publishedAt !== null,
     });
     if (problem !== null) return refuse({ _form: problem });
+    // AFTER the gate, because where transitionProblem refuses it has the better
+    // sentence. What it deliberately does NOT refuse is the escape at the top
+    // of it: `trash -> restoreTarget(history)` is a RESTORE permission, and for
+    // a never-published post that target is `draft`, which is this door's own.
+    // So a binned draft passes every gate above, and the UPDATE would then
+    // write a status without touching `trashed_at` and be refused by
+    // `blog_posts_trash_stamp` as a raw 23514 on a button that looked enabled.
+    // `published` and `archived` are already refused above, so Trash is the
+    // only status that reaches here.
+    if (row.status !== 'scheduled') {
+      return refuse({ _form: 'This post is in Trash, so its schedule has already been called off.' });
+    }
 
     const next = await unschedulePostRow(db, id, version);
     if (next === null) return { ok: false, error: 'conflict' };
@@ -1367,6 +1379,14 @@ export async function unpublishPost(id: string, version: number): Promise<BlogMu
       everPublished: row.publishedAt !== null,
     });
     if (problem !== null) return refuse({ _form: problem });
+    // The same escape unschedulePost closes, one target along: for a post that
+    // WAS published, `restoreTarget` answers `archived`, which is this door's
+    // own target, so a binned formerly-live post passes the gate above and the
+    // UPDATE is then refused by `blog_posts_trash_stamp` as a raw 23514. Only
+    // `published` and `trash` can reach this line.
+    if (row.status !== 'published') {
+      return refuse({ _form: 'This post is in Trash, so it is already off the site.' });
+    }
 
     const previous = beforeRef(identityOf(post), await publishedSnapshot(id));
 
@@ -1393,7 +1413,18 @@ export async function unpublishPost(id: string, version: number): Promise<BlogMu
       actorName: profile.session.user.name || 'Unknown',
     });
 
-    const next = await unpublishPostRow(db, id, version);
+    // The revision comes back out on BOTH failure paths, not just the lost
+    // race: a throw here (a connection blip, a CHECK the doors above missed)
+    // would otherwise leave a permanent row in an immutable history describing
+    // something that never happened, which the revisions screen renders as fact
+    // and a restore would replay.
+    let next: number | null;
+    try {
+      next = await unpublishPostRow(db, id, version);
+    } catch (dbError) {
+      await discardRevision(revision.id);
+      throw dbError;
+    }
     if (next === null) {
       await discardRevision(revision.id);
       return { ok: false, error: 'conflict' };
@@ -1596,6 +1627,18 @@ export async function restorePost(id: string, version: number): Promise<BlogMuta
     const target = restoreTarget(history);
     const problem = transitionProblem(row.status, target, history);
     if (problem !== null) return refuse({ _form: problem });
+    // THE ONE THAT MATTERS MOST, because without it this door is a silent
+    // unpublish. The target is decided by HISTORY, so on a live post
+    // `restoreTarget` answers `archived` and `published -> archived` is a legal
+    // pair: every gate above passes, the post drops off the site, and because
+    // both invalidation refs would be non-public nothing is announced at all.
+    // The store would keep serving the article for the whole 86400 second TTL
+    // and the sitemap would keep listing it, under an audit row reading
+    // "Restored the post from Trash". `scheduled` reaches here the same way.
+    // `restorePostRow` carries the predicate too; this is the sentence.
+    if (row.status !== 'trash') {
+      return refuse({ _form: 'This post is not in Trash, so there is nothing to restore.' });
+    }
 
     const next = await restorePostRow(db, id, version, target);
     if (next === null) return { ok: false, error: 'conflict' };
@@ -1834,10 +1877,18 @@ export async function amendPublishedDate(
       actorName: profile.session.user.name || 'Unknown',
     });
 
-    const next = await amendPublishedAtRow(db, id, version, {
-      revisionId: revision.id,
-      publishedAt: instant,
-    });
+    // Both failure paths take the revision back out, for the reason
+    // unpublishPost states.
+    let next: number | null;
+    try {
+      next = await amendPublishedAtRow(db, id, version, {
+        revisionId: revision.id,
+        publishedAt: instant,
+      });
+    } catch (dbError) {
+      await discardRevision(revision.id);
+      throw dbError;
+    }
     if (next === null) {
       await discardRevision(revision.id);
       return { ok: false, error: 'conflict' };
@@ -2027,7 +2078,15 @@ export async function restoreRevision(
       actorName: profile.session.user.name || 'Unknown',
     });
 
-    const next = await updateWorkingCopy(db, postId, version, columns);
+    // Both failure paths take the revision back out, for the reason
+    // unpublishPost states.
+    let next: number | null;
+    try {
+      next = await updateWorkingCopy(db, postId, version, columns);
+    } catch (dbError) {
+      await discardRevision(revision.id);
+      throw dbError;
+    }
     if (next === null) {
       await discardRevision(revision.id);
       return { ok: false, error: 'conflict' };
