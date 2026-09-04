@@ -464,8 +464,12 @@ async function virtualRevision(
  */
 export async function getDraftPost(id: string, revisionId?: string): Promise<PublishedPost | null> {
   if (!UUID_RE.test(id)) return null;
-  if (revisionId !== undefined && !UUID_RE.test(revisionId)) return null;
-  const row = await fetchPostForPreview(id, revisionId);
+  // An empty `?revision=` means "no revision given", which is what
+  // selectPostForPreview already reads a falsy id as. Guarding it as a
+  // malformed uuid instead would 404 a URL the selector would have answered.
+  const wanted = revisionId || undefined;
+  if (wanted !== undefined && !UUID_RE.test(wanted)) return null;
+  const row = await fetchPostForPreview(id, wanted);
   if (!row) return null;
   const { post, category, author } = row;
   const revision = row.revision ?? (await virtualRevision(post, category.slug, author.slug));

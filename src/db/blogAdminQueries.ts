@@ -312,6 +312,9 @@ export function listCategoriesAdmin(): Promise<BlogCategory[]> {
 
 // ── Delete refusals ─────────────────────────────────────────────────────────
 
+/** What still references an author or a category, counted per TABLE. */
+export type BlogUsage = { posts: number; revisions: number };
+
 /**
  * BOTH tables carry an `author_id` with `ON DELETE RESTRICT`, so counting only
  * the working rows would let a DELETE through to Postgres on an author whose
@@ -319,23 +322,29 @@ export function listCategoriesAdmin(): Promise<BlogCategory[]> {
  * it surfaces as a raw 23503 instead of the readable refusal the member is
  * owed. Same for categories below.
  *
+ * The two numbers are returned SEPARATELY rather than added, because the sum
+ * is not a sentence anybody can write: an author with one post and twelve
+ * earlier versions of it would be refused with "13 posts", which is wrong and
+ * reads as a bug. The refusal copy names the history for what it is, so it
+ * needs the halves.
+ *
  * No uuid guard: the callers read the row first, so the id is already known to
  * exist, and returning 0 for a malformed one would read as "safe to delete".
  */
-export async function countPostsForAuthor(id: string): Promise<number> {
+export async function countPostsForAuthor(id: string): Promise<BlogUsage> {
   const [posts, revisions] = await Promise.all([
     db.select({ n: count() }).from(blogPosts).where(eq(blogPosts.authorId, id)),
     db.select({ n: count() }).from(blogPostRevisions).where(eq(blogPostRevisions.authorId, id)),
   ]);
-  return (posts[0]?.n ?? 0) + (revisions[0]?.n ?? 0);
+  return { posts: posts[0]?.n ?? 0, revisions: revisions[0]?.n ?? 0 };
 }
 
-export async function countPostsForCategory(id: string): Promise<number> {
+export async function countPostsForCategory(id: string): Promise<BlogUsage> {
   const [posts, revisions] = await Promise.all([
     db.select({ n: count() }).from(blogPosts).where(eq(blogPosts.categoryId, id)),
     db.select({ n: count() }).from(blogPostRevisions).where(eq(blogPostRevisions.categoryId, id)),
   ]);
-  return (posts[0]?.n ?? 0) + (revisions[0]?.n ?? 0);
+  return { posts: posts[0]?.n ?? 0, revisions: revisions[0]?.n ?? 0 };
 }
 
 // ── Internal links and slugs ────────────────────────────────────────────────

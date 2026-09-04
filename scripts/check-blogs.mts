@@ -1365,7 +1365,10 @@ eq(
   };
 
   // Every value is distinct, so an assertion cannot pass on a cross-wired
-  // field (`title: post.description` has to go red somewhere).
+  // field (`title: post.description` has to go red somewhere). The four
+  // BOOLEANS are the exception that cannot be fixed here — four of them can
+  // only ever take two values — so they are separated by a second fixture at
+  // 7g instead.
   const WORKING: BlogWorkingView = {
     slug: 'vancouver-realtors-video',
     title: 'Vancouver Realtors: Video and Social Content',
@@ -1391,11 +1394,14 @@ eq(
     ogImageStaticPath: null,
     ogImageMedia: null,
     twitterCard: 'summary_large_image',
+    // The four booleans carry the FIRST half of the two-bit codes explained at
+    // 7g: robotsIndex 1, robotsFollow 1, emitLegacyMetaKeywords 0,
+    // llmsInclude 0. Do not "tidy" these into a single value.
     robotsIndex: true,
-    robotsFollow: false,
+    robotsFollow: true,
     robotsExtra: { 'max-image-preview': 'large' },
     focusKeywords: ['vancouver realtor video'],
-    emitLegacyMetaKeywords: true,
+    emitLegacyMetaKeywords: false,
     customSchema: { '@type': 'FAQPage' },
     llmsInclude: false,
     // THE TRAP. Both are on the row (a caller spreads the whole row in) and
@@ -1581,6 +1587,35 @@ eq(
   };
   eq('every value in the snapshot is JSON, so the jsonb column round-trips it', notJson(snap, 'snapshot'), []);
 
+  // `customSchema` is the ONE field of BlogWorkingView typed `unknown`, and
+  // `unknown` admits `undefined` — `{ ...row, customSchema: undefined }`
+  // compiles clean, where the same edit to `heroMedia` is a type error. So the
+  // `?? null` on that field is not the dead guard its three siblings were, and
+  // task 8's write door is exactly the caller that will hand this an optional
+  // zod field. Without it `JSON.stringify` drops the key on the way into the
+  // column: the stored snapshot's key set matches no other post's, and
+  // publicFingerprint reads as moved, pinging IndexNow for a URL whose bytes
+  // did not change. Nothing on any screen says either.
+  {
+    const undef = buildSnapshot({ ...WORKING, customSchema: undefined }, EXTRA);
+    const nulled = buildSnapshot({ ...WORKING, customSchema: null }, EXTRA);
+    eq('an undefined customSchema is stored as null', undef.customSchema, null);
+    eq('an undefined customSchema leaves no undefined in the snapshot', notJson(undef, 'snapshot'), []);
+    // Through JSON, because that is the round trip the column makes and the
+    // only place a dropped key becomes visible: Object.keys() alone still
+    // reports a key whose value is undefined.
+    eq(
+      'an undefined customSchema keeps its key through the jsonb column',
+      Object.keys(JSON.parse(JSON.stringify(undef))).sort(),
+      Object.keys(JSON.parse(JSON.stringify(nulled))).sort(),
+    );
+    eq(
+      'publicFingerprint cannot tell an undefined customSchema from a null one',
+      publicFingerprint(undef),
+      publicFingerprint(nulled),
+    );
+  }
+
   // ---- 7e. ogImage: null MEANS "use the hero" -----------------------------
   eq('ogImage is null when the post carries no OG image of its own', snap.seo.ogImage, null);
   eq(
@@ -1606,6 +1641,41 @@ eq(
   };
   ok('contentFingerprint accepts a built snapshot', fingerprint(() => contentFingerprint(snap)).length > 0);
   ok('publicFingerprint accepts a built snapshot', fingerprint(() => publicFingerprint(snap)).length > 0);
+
+  // ---- 7g. The four booleans, separated -----------------------------------
+  // A boolean takes one of two values, so four of them in ONE fixture can
+  // never all differ, and a cross-wire between two that happen to agree passes
+  // every assertion above. That is not theoretical: with robotsIndex and
+  // emitLegacyMetaKeywords both true, `robotsIndex: post.emitLegacyMetaKeywords`
+  // left all 594 assertions green, and it is a post that quietly noindexes
+  // itself.
+  //
+  // TWO fixtures close it, and two are enough: give each of the four a
+  // distinct two-bit code across the pair and every ordered pair of them
+  // differs in at least one. The codes are robotsIndex (1,0), robotsFollow
+  // (1,1), emitLegacyMetaKeywords (0,0), llmsInclude (0,1) — so changing one
+  // value in either fixture reopens the hole for whichever pair it collides
+  // with.
+  {
+    const second = buildSnapshot(
+      {
+        ...WORKING,
+        robotsIndex: false,
+        robotsFollow: true,
+        emitLegacyMetaKeywords: false,
+        llmsInclude: true,
+      },
+      EXTRA,
+    );
+    eq('second boolean fixture: seo.robotsIndex', second.seo.robotsIndex, false);
+    eq('second boolean fixture: seo.robotsFollow', second.seo.robotsFollow, true);
+    eq(
+      'second boolean fixture: seo.emitLegacyMetaKeywords',
+      second.seo.emitLegacyMetaKeywords,
+      false,
+    );
+    eq('second boolean fixture: llmsInclude', second.llmsInclude, true);
+  }
 
   // Dating a post is not an edit to it. If either fingerprint read the
   // instants, publishing would move `content_modified_at` (an "Updated"

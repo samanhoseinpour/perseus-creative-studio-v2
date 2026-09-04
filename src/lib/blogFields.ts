@@ -577,9 +577,13 @@ export type BlogRevisionSnapshotView = {
  * That is also why every field of `BlogWorkingView` is required and nullable
  * rather than optional: `JSON.stringify` DROPS an `undefined` value, so an
  * optional field would silently change the key set of a stored snapshot and,
- * with it, both fingerprints. Nothing here coalesces `undefined` away, because
- * with that type nothing can produce one — and a guard that cannot fire reads
- * as a promise coming from somewhere it is not.
+ * with it, both fingerprints. The types carry that for every field but ONE, so
+ * there is exactly one `?? null` below — on `customSchema`, the only field
+ * typed `unknown`, which admits `undefined`. The three sibling coalesces that
+ * were written beside it are gone: `heroMedia`, `ogImageMedia` and
+ * `robotsExtra` are all `T | null`, so nothing can hand them an `undefined`,
+ * and a guard that cannot fire reads as a promise coming from somewhere it is
+ * not.
  */
 export function buildSnapshot(
   post: BlogWorkingView,
@@ -632,7 +636,16 @@ export function buildSnapshot(
       focusKeywords: post.focusKeywords,
       emitLegacyMetaKeywords: post.emitLegacyMetaKeywords,
     },
-    customSchema: post.customSchema,
+    // NOT the dead guard the other three coalesces were, and the difference is
+    // exactly `unknown`: it is the one field here typed that way, and `unknown`
+    // admits `undefined`, so `{ ...row, customSchema: undefined }` compiles
+    // clean where the same edit to `heroMedia` is a type error. Task 8's write
+    // door is precisely the caller that hands this an optional zod field.
+    // Left un-coalesced, `JSON.stringify` DROPS the key on the way into the
+    // jsonb column: the stored snapshot's key set then matches no other post's,
+    // and `publicFingerprint` reads as changed, which pings IndexNow for a URL
+    // whose bytes did not move. Both silent.
+    customSchema: post.customSchema ?? null,
     llmsInclude: post.llmsInclude,
     publishedAt: extra.publishedAt,
     contentModifiedAt: extra.contentModifiedAt,
