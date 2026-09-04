@@ -1955,6 +1955,15 @@ ok(
 // is in BlogWorkingUpdate's Omit, so `contentModifiedAt: new Date()` in
 // prepareSave's columns TYPE-CHECKS and would stamp the visible "Updated"
 // byline, JSON-LD dateModified and the sitemap lastmod on every autosave.
+//
+// TO WHOEVER ADDS THE TRANSITION DOORS (task 9): this WILL fail for you, and
+// legitimately. `publishPost` and `schedulePost` are exactly the doors that
+// must stamp `publishedAt` and `contentModifiedAt`, almost certainly written
+// `publishedAt: new Date()`, which is the idiom blogStatements.ts already uses
+// for `updatedAt`. Narrow this to the create/autosave/save path on purpose
+// rather than deleting it, the way the token sweep above says the same thing:
+// catching an AUTOSAVE that stamps a date is the whole point of it, and that
+// hazard does not go away when a publish door lands beside it.
 ok(
   'no door in this file stamps an editorial instant',
   !/(publishedAt|contentModifiedAt): new Date\(/.test(ACTIONS_CODE),
@@ -1976,8 +1985,13 @@ ok('savePost writes the revision before the version-guarded update', iUpdate > i
 // precedes the conflict return would stay green while the one in the conflict
 // branch was deleted, because the error path above it also calls it, so the
 // branch itself is sliced out and read on its own.
+// Sliced from the COMMENT-STRIPPED source, like every other region here. It
+// was the raw one, which was harmless only until the branch grew a comment,
+// and it just grew one: a `// discardRevision(...) happens below` line would
+// otherwise satisfy the index test on its own. The replaceEntities assertion
+// made exactly this mistake and was found by its own mutation.
 const CONFLICT_BRANCH = region(
-  SAVE_POST,
+  SAVE_POST_CODE,
   'if (version === null) {',
   'logActivity',
   'the savePost conflict branch',
