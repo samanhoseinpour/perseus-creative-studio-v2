@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, lte, ne, sql, type SQL } from 'drizzle-orm';
 
 import {
   blogEntities,
@@ -660,4 +660,75 @@ export async function unpublishedLinkTargets(
     .from(blogPosts)
     .where(and(inArray(blogPosts.slug, slugs), ne(blogPosts.status, 'published')));
   return rows.map((row) => row.slug);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scheduled publication                                                      */
+/* -------------------------------------------------------------------------- */
+/* LAST IN THE FILE ON PURPOSE. scripts/check-blogs.mts slices this module into
+   per-statement regions by "from one signature to the next", so a statement
+   dropped between two existing ones is swallowed by its neighbour's region and
+   that neighbour's assertions quietly start describing the wrong code. Anything
+   added here goes at the end, or moves a marker in the check with it. */
+
+/**
+ * Flip every schedule that has come due. ONE atomic UPDATE, and the only
+ * caller is the `blog-publish` cron route — which is why it lives here with
+ * the rest of the blog's writes rather than inline in a route handler: a
+ * statement nothing outside a route can reach is a statement no check script
+ * can run, and every rule below is silent when broken.
+ *
+ * IDEMPOTENT BY CONSTRUCTION, which is the requirement rather than a bonus:
+ * Vercel documents duplicate cron invocations, so a second run in the same
+ * minute is the realistic case. After the first run `status` is no longer
+ * `scheduled`, so the WHERE matches nothing, zero rows come back and nothing
+ * moves. There is no read-then-write anywhere in it, so two invocations racing
+ * cannot both claim one row: the second UPDATE's own WHERE re-evaluates after
+ * the first commits.
+ *
+ * `published_at = coalesce(published_at, publish_at)` carries two rules at
+ * once. It takes the INTENDED instant rather than the run time, so a cron that
+ * fires late does not re-date the post to whenever the platform got round to
+ * it; and the coalesce keeps an EARLIER publication date if the row already
+ * had one, the same rule `publishPostRow` states. Written as a bare
+ * `publish_at` it would silently re-date a post on its next scheduled run.
+ *
+ * All four publication columns move in that one statement, which is what keeps
+ * migration 0045's three CHECK constraints satisfied at every instant: there
+ * are no transactions here, so a two-statement version would offer Postgres a
+ * half-built row in between and be refused outright.
+ *
+ * `pending_revision_id is not null` is redundant against
+ * `blog_posts_schedule_stamp` and stays anyway: it is what makes the
+ * `published_revision_id = pending_revision_id` assignment provably non-null,
+ * so a constraint dropped later can never turn this into a statement that
+ * publishes a post pointing at nothing.
+ *
+ * It touches NO revision row. The schedule revision already carries the
+ * intended instant in its typed `published_at` and in `snapshot.publishedAt`,
+ * because the public date is read off the REVISION.
+ */
+export async function publishDuePostRows(
+  db: BlogDb,
+  at: Date,
+): Promise<{ id: string; slug: string }[]> {
+  return db
+    .update(blogPosts)
+    .set({
+      status: 'published',
+      publishedRevisionId: sql`${blogPosts.pendingRevisionId}`,
+      pendingRevisionId: null,
+      publishedAt: sql`coalesce(${blogPosts.publishedAt}, ${blogPosts.publishAt})`,
+      publishAt: null,
+      version: sql`${blogPosts.version} + 1`,
+      updatedAt: at,
+    })
+    .where(
+      and(
+        eq(blogPosts.status, 'scheduled'),
+        lte(blogPosts.publishAt, at),
+        isNotNull(blogPosts.pendingRevisionId),
+      ),
+    )
+    .returning({ id: blogPosts.id, slug: blogPosts.slug });
 }

@@ -1,9 +1,10 @@
 import 'server-only';
-import { and, asc, count, desc, eq, ilike, inArray, max, ne, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, max, ne, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { searchAllTokens } from '@/db/adminQueries';
 import { user } from '@/db/auth-schema';
+import { adminPostsOrder, adminPostsWhere } from '@/db/blogAdminPredicates';
 import { publicPostsWhere } from '@/db/blogPredicates';
 import { fetchPostEntities, fetchPostRelatedSlugs } from '@/db/blogQueries';
 import {
@@ -29,9 +30,10 @@ import { blogStatusFilter, type BlogListParams } from '@/lib/blogFilters';
  * ONE AUDIENCE — anyone holding the `blogs` grant — so unlike payroll there is
  * no own-vs-admin projection split here and no second door to route around.
  * `server-only` for the reason blogQueries.ts carries it: none of this may
- * reach a client bundle. The SELECT shapes the check script proves against a
- * real Postgres live in the guard-free src/db/blogPredicates.ts; what is here
- * is admin-side and holds its own `db`.
+ * reach a client bundle. Anything scripts/check-blogs.mts --db has to RUN lives
+ * in a guard-free neighbour instead: the public SELECT shapes in
+ * src/db/blogPredicates.ts, this list's WHERE and ORDER BY in
+ * src/db/blogAdminPredicates.ts. What is left here holds its own `db`.
  *
  * The public path is untouched: nothing in this file is read by a marketing
  * route, and nothing here calls `unstable_cache`.
@@ -72,61 +74,6 @@ export type AdminPostsPage = {
   page: number;
   totalPages: number;
 };
-
-/**
- * The ONE WHERE clause for the posts list. The status half goes through
- * `blogStatusFilter` and is never spelled inline: "all excludes trash" is a
- * rule that has to exist in exactly one place, or the default tab quietly
- * starts listing the bin.
- *
- * Search is TOKENIZED (`searchAllTokens`, an AND of ORs), never one `%q%`
- * wrap: a contiguous substring cannot skip a word, so "vancouver realtors
- * video" would fail to find "Vancouver Realtors: Video and Social Content",
- * and a term belonging to a different field from its neighbour could never
- * match at all. Neither is a typo.
- *
- * The reach is title, slug and description on the post row plus the author's
- * name and the category's title — and those last two need no EXISTS subquery
- * here, unlike the task board's, because this query already makes both joins
- * one-to-one, so no row can be multiplied and `count(*) over ()` stays honest.
- */
-function adminPostsWhere(params: Pick<BlogListParams, 'status' | 'q' | 'author' | 'category'>) {
-  const clauses: SQL[] = [];
-  const statuses = blogStatusFilter(params.status);
-  if (statuses) clauses.push(inArray(blogPosts.status, statuses));
-  if (params.q) {
-    const q = searchAllTokens(params.q, (like) => [
-      ilike(blogPosts.title, like),
-      ilike(blogPosts.slug, like),
-      ilike(blogPosts.description, like),
-      ilike(blogAuthors.name, like),
-      ilike(blogCategories.title, like),
-    ]);
-    if (q) clauses.push(q);
-  }
-  if (params.author) clauses.push(eq(blogAuthors.slug, params.author));
-  if (params.category) clauses.push(eq(blogCategories.slug, params.category));
-  return clauses.length ? and(...clauses) : undefined;
-}
-
-/**
- * Every branch ends on `blog_posts.id`, so OFFSET paging can never show a row
- * on two pages or drop one. `nulls last` is redundant on an ASC arm (it is
- * Postgres's default) and load-bearing on the DESC one, where the default is
- * NULLS FIRST — without it every draft would sit ahead of every published post
- * on the `published` ordering.
- */
-function adminPostsOrder(sort: BlogListParams['sort']) {
-  if (sort === 'title') return [asc(blogPosts.title), desc(blogPosts.id)];
-  if (sort === 'published') {
-    return [
-      sql`${blogPosts.publishedAt} desc nulls last`,
-      desc(blogPosts.updatedAt),
-      desc(blogPosts.id),
-    ];
-  }
-  return [desc(blogPosts.updatedAt), desc(blogPosts.id)];
-}
 
 /** One page of the admin list. `page` is clamped to the available range (the
  *  `listSubmissions` pattern: the filtered total rides every row as a window
