@@ -67,8 +67,10 @@ export const editorNodeLabel =
 export const editorNodeInput =
   'min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-sm text-black outline-none placeholder:text-black/35 hover:border-black/10 focus:border-black/25 disabled:cursor-default';
 
-/** The editable region of a container node. */
-export const editorNodeBody = 'px-3 py-2';
+/** The media well inside an atom's card: the picture, or the video poster.
+ *  Not the editable region of a container node, which is a `NodeViewContent`
+ *  carrying whatever grammar its own block needs. */
+export const editorNodeWell = 'px-3 py-3';
 
 /** A short, quiet line of explanation inside a card. */
 export const editorNodeNote = 'px-3 py-2 text-xs text-black/55';

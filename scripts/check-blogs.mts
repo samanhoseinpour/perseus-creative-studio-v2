@@ -4927,12 +4927,23 @@ eq(
 // away so its diffs stay readable. Node and mark order is RANK, and rank is
 // load-bearing: `blogBody.ts` gives the `link` mark `priority: 1000` so it
 // ranks first, which is what makes `**[x](y)**` render `<strong><a>` the way
-// remark did and the parity snapshot recorded. A reorder changes the nesting
-// on every public page with nothing else here going red, so it is asserted on
-// its own rather than left to a comment claiming more than the projection
-// checks.
+// remark did and the parity snapshot recorded.
+//
+// THE TWO LINES BELOW GUARD DIFFERENT THINGS, and it is worth being exact
+// about which, because the obvious reading of the first is wrong. Both schemas
+// are built from `EXTENSIONS` and Tiptap's `sortExtensions` is stable, and the
+// seven editor-only extensions appended to that list contribute no node and no
+// mark. So changing the CANONICAL priority in `blogBody.ts` moves both sides
+// identically and the comparison stays green (verified by mutation).
+//
+//  - The `eq` catches the EDITOR list drifting from the canonical one: an
+//    appended or reordered entry, or a priority set inside the editor's own
+//    `.extend()`. That is real drift and nothing else here sees it.
+//  - The `ok` is what actually guards the rank itself. A canonical reorder
+//    changes the nesting on every public page, and it is invisible to any
+//    editor-versus-renderer comparison precisely because it moves both.
 eq(
-  'and in the same ORDER, because a mark rank decides how nested marks render',
+  'and the editor list is in the same ORDER as the canonical one',
   [
     Object.keys(editorSchema.nodes),
     Object.values(editorSchema.marks).map((type) => [type.name, type.rank]),
@@ -4942,7 +4953,7 @@ eq(
     Object.values(blogSchema.marks).map((type) => [type.name, type.rank]),
   ],
 );
-ok('the link mark still ranks first (fixture guard)', editorSchema.marks.link.rank === 0);
+ok('and the link mark still ranks first, which decides how nested marks render', editorSchema.marks.link.rank === 0);
 
 // ── The clipboard ───────────────────────────────────────────────────────────
 // Tiptap gives a node a `toDOM` only when its extension defines `renderHTML`,
@@ -5305,6 +5316,33 @@ eq(
   for (const name of ['youtube', 'instagram'] as const) {
     eq(`and a ${name} with no id is refused too`, parseAttrs(name, {}), false);
   }
+
+  // THE SCHEMA-LEGAL NULL, both ends, because nothing else covered the render
+  // half. `figure.image` defaults to null in `blogBody.ts`, so a figure with
+  // no image is a legal ProseMirror node even though `imageSourceSchema`
+  // refuses it, and this is what the two halves do with one:
+  //
+  //  - `toAttr` returns null for a null image, so NO `data-image` is written.
+  //    The alternative is the four letters "null" in the attribute, which is
+  //    the mistake `text()`'s own comment warns about and which would decode
+  //    to a different thing again.
+  //  - the parse rule then refuses, because `image` is required.
+  //
+  // The refusal is deliberate and is the smaller loss. A figure with a null
+  // image can never be SAVED, so pasting one carries an unsavable node into a
+  // document that was fine, and every autosave after it fails with an error
+  // naming a node the writer pasted rather than typed. Dropping the block is
+  // visible; an unsavable document is not. Pinned so a future change cannot
+  // flip it in either direction without saying so.
+  {
+    const empty = editorSchema.nodes.figure.create({ image: null, alt: 'half built' });
+    const rendered = renderedAttrs(empty);
+    eq(
+      'a figure with a null image writes no data-image, and pasting one is refused',
+      [Object.keys(rendered).sort(), parseAttrs('figure', rendered)],
+      [['data-alt', 'data-blog-node', 'data-priority', 'data-size'], false],
+    );
+  }
 }
 
 // The two halves have to AGREE, and nothing else here would catch them
@@ -5378,6 +5416,26 @@ eq(
       code.includes(needle),
     ),
     [],
+  );
+
+  // AN OPTIONAL TEXT FIELD IS COERCED AT ITS COMMIT POINT, NEVER ON KEYSTROKE.
+  // `'' -> null` inside an `onChange` makes a LEADING SPACE impossible: the
+  // first space trims to empty, becomes null, and the controlled input
+  // swallows it, so a caption can never begin with one and the field reads as
+  // broken. It is invisible in every other check here, because the stored
+  // document is perfectly valid either way. `FigureDialog` trims at submit;
+  // the node view trims on blur, which is the same moment.
+  const FIGURE_CODE = stripComments(
+    readRepoFile('../src/components/Admin/blogs/editor/nodeviews/Figure.tsx'),
+  );
+  ok('read the figure node view (drift guard)', FIGURE_CODE.length > 1000);
+  eq(
+    'the figure controls coerce on blur, never on every keystroke',
+    [
+      [...FIGURE_CODE.matchAll(/onChange=\{[^}]*\}/g)].filter((match) => match[0].includes('trim(')),
+      occurrences(FIGURE_CODE, 'onBlur='),
+    ],
+    [[], 3],
   );
 }
 
@@ -5579,6 +5637,11 @@ eq(
   );
   ok('applyLink gates on safeHref before it writes anything', applyLink.includes('safeHref(href) === null'));
   ok('and applies the mark through setBlogLink on both branches', occurrences(applyLink, 'setBlogLink(') === 2);
+  // `BODY_EDITOR_CODE` is `stripComments(BODY_EDITOR_SRC)`, declared above, so
+  // the comment two paragraphs up that spells `marks: [{ type: 'link' }]` out
+  // in prose does not trip this. Named here because the variable's own name
+  // does not say so, and a reader checking the raw-source-slice trap this plan
+  // has been bitten by would otherwise have to go and look.
   eq(
     'no link mark is ever built by hand in BodyEditor',
     [/type:\s*'link'/.test(BODY_EDITOR_CODE), /marks:\s*\[/.test(BODY_EDITOR_CODE)],

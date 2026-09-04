@@ -14,6 +14,7 @@ import {
   editorNodePanel,
   editorNodeProblem,
   editorNodeShell,
+  editorNodeWell,
   editorToolButton,
 } from '@/components/Admin/blogs/editor/editorBox';
 import type { BlogMedia } from '@/db/schema';
@@ -65,6 +66,21 @@ export default function FigureNodeView(props: ReactNodeViewProps) {
   const image = attrs.image;
   const alt = attrs.alt ?? '';
 
+  /**
+   * Commit an optional text field, on BLUR rather than on every keystroke.
+   *
+   * Coercing `'' -> null` while the writer types makes a leading space
+   * impossible: the first space trims to empty, becomes null, and the
+   * controlled input swallows it, so "  Two operators" can never be typed and
+   * the field feels broken. Trimming at the commit point is also what
+   * `FigureDialog` does when it inserts the figure, so the two doors agree on
+   * what an empty caption is.
+   */
+  const commitText = (key: 'caption' | 'credit' | 'alt') => (value: string) => {
+    const next = value.trim();
+    updateAttributes({ [key]: key === 'alt' ? next : next === '' ? null : next });
+  };
+
   return (
     <NodeViewWrapper className={editorNodeShell}>
       <div className={editorNodeBar} contentEditable={false}>
@@ -97,6 +113,7 @@ export default function FigureNodeView(props: ReactNodeViewProps) {
                     maxLength={300}
                     placeholder="Two camera operators on a Vancouver street"
                     onChange={(event) => updateAttributes({ alt: event.target.value })}
+                    onBlur={(event) => commitText('alt')(event.target.value)}
                   />
                   <p className="text-[11px] text-black/50">
                     Read by screen readers and search engines. Required.
@@ -113,9 +130,8 @@ export default function FigureNodeView(props: ReactNodeViewProps) {
                     value={attrs.caption ?? ''}
                     maxLength={2000}
                     placeholder="Shown under the image"
-                    onChange={(event) =>
-                      updateAttributes({ caption: event.target.value.trim() === '' ? null : event.target.value })
-                    }
+                    onChange={(event) => updateAttributes({ caption: event.target.value })}
+                    onBlur={(event) => commitText('caption')(event.target.value)}
                   />
                 </div>
 
@@ -129,9 +145,8 @@ export default function FigureNodeView(props: ReactNodeViewProps) {
                     value={attrs.credit ?? ''}
                     maxLength={2000}
                     placeholder="Who took it"
-                    onChange={(event) =>
-                      updateAttributes({ credit: event.target.value.trim() === '' ? null : event.target.value })
-                    }
+                    onChange={(event) => updateAttributes({ credit: event.target.value })}
+                    onBlur={(event) => commitText('credit')(event.target.value)}
                   />
                 </div>
 
@@ -162,7 +177,7 @@ export default function FigureNodeView(props: ReactNodeViewProps) {
           This image has nothing to show. Delete the block and add the picture again.
         </p>
       ) : (
-        <div className="px-3 py-3" contentEditable={false}>
+        <div className={editorNodeWell} contentEditable={false}>
           {image.type === 'media' ? (
             <MediaImage
               variants={image.variants}

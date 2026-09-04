@@ -8,6 +8,7 @@ import {
   editorNodeLabel,
   editorNodeNote,
   editorNodeShell,
+  editorNodeWell,
 } from '@/components/Admin/blogs/editor/editorBox';
 
 /**
@@ -49,7 +50,7 @@ export default function YoutubeNodeView({ node, updateAttributes, editor }: Reac
         </label>
       </div>
 
-      <div className="px-3 py-3" contentEditable={false}>
+      <div className={editorNodeWell} contentEditable={false}>
         <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
           {id && (
             // YouTube's own poster frame: a third-party asset, outside the
