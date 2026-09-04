@@ -17,6 +17,22 @@ import {
   tallyRow,
   taskCardBody,
 } from '@/components/Admin/tasks/menu';
+// The posts list's own boxes, for the same reason and aliased because the
+// tasks panel above already claims four of these names in this file. They are
+// a separate surface's tokens, so they are imported rather than assumed equal
+// to the tasks ones they currently happen to match.
+import {
+  panelDivider as blogPanelDivider,
+  panelRow as blogPanelRow,
+  postGrid as blogPostGrid,
+  postHeadCell as blogHeadCell,
+  postHeadRow as blogHeadRow,
+  postMenuGutter as blogMenuGutter,
+  postRowPad as blogRowPad,
+  postRowShell as blogRowShell,
+  tabItem as blogTabItem,
+  tabStrip as blogTabStrip,
+} from '@/components/Admin/blogs/listBox';
 import { TASK_COLUMNS, type TaskColumn } from '@/lib/taskColumns';
 import type { TaskViewMode } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
@@ -805,6 +821,114 @@ export function CareersRosterSkeleton() {
             </ul>
           </section>
         ))}
+      </GlassPanel>
+
+      <SkeletonNote />
+    </Shell>
+  );
+}
+
+/**
+ * /admin/blogs — the posts list. Six status tabs, the filter bar, the head row,
+ * the bulk bar, then rows.
+ *
+ * Every box comes from `Admin/blogs/listBox`, the real surface's own tokens,
+ * so a padding change on the list moves this with it. The head row and the
+ * rows share `postGrid` for the same reason they do on the page: a skeleton
+ * whose seven columns are written separately lines up until the next edit.
+ *
+ * `Shell` takes `wide`, which is the token the page passes AdminPage. Anything
+ * else and loading.tsx renders at one measure and the page snaps to another.
+ */
+export function BlogsListSkeleton() {
+  return (
+    <Shell label="Loading posts">
+      <SkeletonHeader
+        eyebrow="Website"
+        title="Blog"
+        subtitle="Drafts, scheduled posts and everything live on the public blog."
+        action={<SkeletonPill className={cn(HEADER_CONTROL, 'w-28')} />}
+      />
+
+      <GlassPanel className="mt-6">
+        {/* All, Draft, Scheduled, Published, Archived, Trash. Every one carries
+            a count badge except the ones that happen to be empty, which is not
+            knowable here, so all six reserve one. */}
+        <div className={blogPanelDivider}>
+          <div className={blogTabStrip}>
+            {['w-6', 'w-10', 'w-16', 'w-16', 'w-14', 'w-10'].map((w, i) => (
+              <span key={i} className={cn(blogTabItem, 'border-transparent')}>
+                <SkeletonText className={cn('h-2.5', w)} />
+                <span className="h-4 w-5 shrink-0 rounded-full bg-foreground/10" />
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Search, author, category, sort. Clear filters is conditional and is
+            deliberately not reserved. */}
+        <div className={cn(blogPanelRow, 'flex flex-wrap items-center gap-2')}>
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          {['w-20', 'w-24', 'w-36'].map((w, i) => (
+            <SkeletonLine key={i} className={cn('h-8 shrink-0 rounded-lg', w)} />
+          ))}
+        </div>
+
+        <div className={blogHeadRow}>
+          <div className={blogPostGrid}>
+            {['w-10', 'w-12', 'w-12', 'w-16', 'w-24', 'w-14', 'w-16'].map((w, i) => (
+              <span
+                key={i}
+                className={cn(blogHeadCell, i === 0 && 'pl-[1.625rem]')}
+              >
+                <SkeletonText className={cn('h-2', w)} />
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* The bulk bar is always rendered: it hosts the select-all checkbox. */}
+        <div className={cn(blogPanelRow, 'flex items-center gap-2')}>
+          <span className="ml-0.5 size-4 rounded-[3px] bg-foreground/10" />
+          <SkeletonText className="h-2.5 w-14" />
+        </div>
+
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li key={i} className={blogRowShell}>
+              <div className={cn(blogRowPad, blogPostGrid, 'min-w-0 flex-1')}>
+                <span className="flex min-w-0 items-start gap-2.5">
+                  <span className="mt-0.5 size-4 shrink-0 rounded-[3px] bg-foreground/10" />
+                  <span className="min-w-0 flex-1">
+                    <SkeletonText className="w-3/5" />
+                    {/* The address line, then the phone-only meta line the
+                        seven columns replace at lg. */}
+                    <span className="mt-0.5 block text-xs">
+                      <SkeletonText className="h-2 w-2/5" />
+                    </span>
+                    <span className="mt-1 block text-xs lg:hidden">
+                      <SkeletonText className="h-2 w-1/2" />
+                    </span>
+                  </span>
+                </span>
+                <span className="hidden lg:block">
+                  <SkeletonPill className="h-4 w-16" />
+                  <span className="mt-1 block text-[0.7rem]">
+                    <SkeletonText className="h-2 w-24" />
+                  </span>
+                </span>
+                {['w-16', 'w-20', 'w-24', 'w-8', 'w-16'].map((w, j) => (
+                  <span key={j} className="hidden text-xs lg:block">
+                    <SkeletonText className={cn('h-2', w)} />
+                  </span>
+                ))}
+              </div>
+              <span className={blogMenuGutter}>
+                <span className="size-4 rounded bg-foreground/10" />
+              </span>
+            </li>
+          ))}
+        </ul>
       </GlassPanel>
 
       <SkeletonNote />

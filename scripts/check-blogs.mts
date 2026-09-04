@@ -109,9 +109,20 @@ import {
 import {
   blogListQs,
   blogStatusFilter,
+  isBlogListStatus,
   parseBlogListParams,
   type BlogListParams,
 } from '@/lib/blogFilters';
+import {
+  BLOG_BULK_ACTIONS,
+  BLOG_LIST_TABS,
+  BLOG_STATUS_DATE_LABELS,
+  blogRowActions,
+  blogStatusDate,
+  blogTabCount,
+  blogTabLabel,
+} from '@/lib/blogListFields';
+import { postGrid, tabItem, tabStrip } from '@/components/Admin/blogs/listBox';
 import {
   blogAuthorFieldsSchema,
   blogCategoryFieldsSchema,
@@ -4131,7 +4142,261 @@ eq(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 12. The real statements, against Neon (--db)
+// 12. The posts list screen
+// ═══════════════════════════════════════════════════════════════════════════
+// /admin/blogs is the first SCREEN in this feature, and four of its decisions
+// are silent when they are wrong: the list still renders, it just says or
+// offers the wrong thing.
+//
+//  - A TAB BADGE that is not the count of the rows behind it. `all` is the one
+//    that can drift, because "all" here is not "every row": the bin is
+//    excluded, and that rule lives in `blogStatusFilter` alone, which is the
+//    same door `adminPostsWhere` applies. Summing the whole counts record
+//    instead puts a number on the default tab that no page of it adds up to.
+//  - A STATUS WITH NO TAB. It is a set of posts nothing on the list can ever
+//    select, and nothing on screen says they exist.
+//  - A ROW MENU offering a move the state leaf refuses, or offering PURGE
+//    early. Purge is the one irreversible act in this domain: it deletes the
+//    post, its revisions and its uploaded images. Offering it beside "Edit" on
+//    a live article is one misclick from losing one.
+//  - A STATUS CELL labelling the wrong instant. A scheduled post's
+//    `publish_at` is in the FUTURE; captioned "Published" it claims a post is
+//    live that is not.
+//
+// Every assertion below was mutation-tested: the function was broken
+// deliberately and the assertion went red.
+
+// ---- 1. The tab strip -------------------------------------------------------
+eq(
+  'the tabs read all, then every status in the order the vocabulary declares',
+  [...BLOG_LIST_TABS],
+  ['all', 'draft', 'scheduled', 'published', 'archived', 'trash'],
+);
+ok(
+  'every tab is a status the URL parser will accept back',
+  BLOG_LIST_TABS.every((tab) => isBlogListStatus(tab)),
+);
+// The one that matters: a stored status with no tab is a set of posts nobody
+// can reach from this screen.
+eq(
+  'every stored status has a tab of its own',
+  BLOG_POST_STATUSES.filter((status) => !BLOG_LIST_TABS.includes(status)),
+  [],
+);
+eq("the default tab is labelled 'All'", blogTabLabel('all'), 'All');
+for (const status of BLOG_POST_STATUSES) {
+  eq(
+    `the ${status} tab is labelled the same word its pill carries`,
+    blogTabLabel(status),
+    BLOG_POST_STATUS_LABELS[status],
+  );
+}
+
+// ---- 2. The badge counts the rows the tab returns ---------------------------
+// Distinct primes so a fold that sums the wrong subset cannot land on the
+// right number by accident, and a bin big enough that including it is obvious.
+const TAB_COUNTS: Record<BlogPostStatus, number> = {
+  draft: 3,
+  scheduled: 5,
+  published: 7,
+  archived: 11,
+  trash: 13,
+};
+for (const status of BLOG_POST_STATUSES) {
+  eq(
+    `the ${status} badge is that status's own count`,
+    blogTabCount(status, TAB_COUNTS),
+    TAB_COUNTS[status],
+  );
+}
+eq(
+  "the all badge sums exactly the statuses blogStatusFilter('all') names",
+  blogTabCount('all', TAB_COUNTS),
+  (blogStatusFilter('all') ?? []).reduce((sum, s) => sum + TAB_COUNTS[s], 0),
+);
+eq('the all badge is 3 + 5 + 7 + 11, stated as a literal', blogTabCount('all', TAB_COUNTS), 26);
+ok(
+  'the all badge does not count the bin',
+  blogTabCount('all', TAB_COUNTS) <
+    Object.values(TAB_COUNTS).reduce((sum, n) => sum + n, 0),
+);
+eq(
+  'a tab over an empty board reads 0 rather than blank',
+  blogTabCount('all', { draft: 0, scheduled: 0, published: 0, archived: 0, trash: 0 }),
+  0,
+);
+
+// ---- 3. The row menu, swept over the whole vocabulary -----------------------
+for (const status of BLOG_POST_STATUSES) {
+  const actions = blogRowActions(status);
+  const binned = status === 'trash';
+  ok(`preview is offered on a ${status} post`, actions.preview);
+  eq(
+    `View live is offered on a ${status} post only if it is published`,
+    actions.viewLive,
+    status === 'published',
+  );
+  eq(`trash is offered on a ${status} post only if it is not binned`, actions.trash, !binned);
+  eq(`restore is offered on a ${status} post only from the bin`, actions.restore, binned);
+  // The irreversible one. Nothing can be destroyed without having been binned
+  // first, which is a second deliberate act by the same person.
+  eq(`purge is offered on a ${status} post only from the bin`, actions.purge, binned);
+  ok(
+    `a ${status} post is never offered both trash and restore`,
+    !(actions.trash && actions.restore),
+  );
+}
+
+// The drift guard: the menu may never offer a move `transitionProblem`
+// refuses, or a member meets a refusal on a control that looked live.
+for (const status of BLOG_POST_STATUSES) {
+  for (const everPublished of [false, true]) {
+    const history = { everPublished };
+    const actions = blogRowActions(status);
+    eq(
+      `Move to trash on a ${status} post (everPublished=${everPublished}) matches transitionProblem`,
+      actions.trash,
+      transitionProblem(status, 'trash', history) === null,
+    );
+    if (actions.restore) {
+      eq(
+        `Restore on a ${status} post (everPublished=${everPublished}) lands somewhere the leaf allows`,
+        transitionProblem(status, restoreTarget(history), history),
+        null,
+      );
+    }
+  }
+}
+
+// ---- 4. Bulk: trash and restore, and nothing else ---------------------------
+eq('a selection may only be trashed or restored', [...BLOG_BULK_ACTIONS], ['trash', 'restore']);
+ok(
+  'there is no bulk publish: it would have to swallow a refusal or explain a mixed outcome',
+  !(BLOG_BULK_ACTIONS as readonly string[]).includes('publish'),
+);
+ok(
+  'there is no bulk purge: it deletes uploaded images and cannot be undone',
+  !(BLOG_BULK_ACTIONS as readonly string[]).includes('purge'),
+);
+for (const action of BLOG_BULK_ACTIONS) {
+  const offering = BLOG_POST_STATUSES.filter((status) => blogRowActions(status)[action]);
+  // A bulk button whose action every status offers can never hide, so it would
+  // sit over a selection it cannot move.
+  ok(
+    `the bulk "${action}" button is offered by some statuses and refused by others`,
+    offering.length > 0 && offering.length < BLOG_POST_STATUSES.length,
+  );
+}
+
+// ---- 5. Which instant the Status cell is describing -------------------------
+for (const [status, kind] of [
+  ['draft', 'updated'],
+  ['scheduled', 'scheduled'],
+  ['published', 'published'],
+  // Archived HAS a publish date, but "Published <date>" over a post that no
+  // longer resolves reads as a claim that it is live.
+  ['archived', 'updated'],
+  ['trash', 'trashed'],
+] as const) {
+  eq(`a ${status} post's Status cell states its ${kind} date`, blogStatusDate(status), kind);
+}
+eq(
+  'the four captions are four different words, so no two states read alike',
+  new Set(Object.values(BLOG_STATUS_DATE_LABELS)).size,
+  Object.keys(BLOG_STATUS_DATE_LABELS).length,
+);
+ok(
+  'no caption is blank',
+  Object.values(BLOG_STATUS_DATE_LABELS).every((label) => label.trim().length > 0),
+);
+ok(
+  'a scheduled post is never captioned as published',
+  !BLOG_STATUS_DATE_LABELS[blogStatusDate('scheduled')].includes('Publish'),
+);
+
+// ---- 6. The boxes the list and its skeleton share --------------------------
+// `overflow-x-auto` makes the Y axis scrollable too, so a `-mb-px` child inside
+// the tab scroller lets iOS rubber-band the whole strip off screen. It has to
+// sit on the scroller, with the border on the wrapper above it.
+ok('the tab strip carries the -mb-px lift', tabStrip.includes('-mb-px'));
+ok('no individual tab carries it', !tabItem.includes('-mb-px'));
+// The seven columns exist only from `lg`. Ungated, a 360px phone gets a
+// seven-column grid instead of the stack, and the row is unreadable.
+ok('the post grid only becomes a grid at lg', postGrid.includes('lg:grid-cols-['));
+ok('the post grid never lays out columns below lg', !/(^|\s)grid-cols-/.test(postGrid));
+
+// ---- 7. The screen's own source -------------------------------------------
+const LIST_SRC = readRepoFile('../src/components/Admin/blogs/BlogsList.tsx');
+const ROWMENU_SRC = readRepoFile('../src/components/Admin/blogs/BlogRowMenu.tsx');
+const FILTERBAR_SRC = readRepoFile('../src/components/Admin/blogs/BlogsFilterBar.tsx');
+const PILL_SRC = readRepoFile('../src/components/Admin/blogs/BlogStatusPill.tsx');
+const BLOGS_PAGE_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/blogs/page.tsx');
+const SKELETONS_SRC = readRepoFile('../src/components/Admin/skeletons/AdminSkeletons.tsx');
+const ADMINPAGE_SRC = readRepoFile('../src/components/Admin/AdminPage.tsx');
+
+const LIST_SCREEN_FILES = [
+  ['BlogsList.tsx', LIST_SRC],
+  ['BlogRowMenu.tsx', ROWMENU_SRC],
+  ['BlogsFilterBar.tsx', FILTERBAR_SRC],
+  ['BlogStatusPill.tsx', PILL_SRC],
+  ['blogs/page.tsx', BLOGS_PAGE_SRC],
+] as const;
+
+for (const [label, src] of LIST_SCREEN_FILES) {
+  ok(`read ${label} (drift guard)`, src.length > 500);
+}
+ok('read AdminSkeletons.tsx (drift guard)', SKELETONS_SRC.length > 2000);
+
+// Admin copy carries no em dash: members read this dashboard daily and it is
+// the most recognisable machine-writing tell. The ONE allowance is the empty
+// value glyph in a cell, which is a spreadsheet convention rather than prose,
+// so it is removed by its exact form before the sweep.
+const EMPTY_CELL_GLYPH = /(?:'—'|>—<)/g;
+for (const [label, src] of LIST_SCREEN_FILES) {
+  eq(
+    `no em dash in ${label} outside the empty-cell glyph`,
+    stripComments(src).replace(EMPTY_CELL_GLYPH, '').includes('—'),
+    false,
+  );
+}
+
+// The rosters in this dashboard never construct a Date in the browser: every
+// date arrives as a finished string, formatted once on the server in the
+// viewer's own zone. A `new Date()` here would render one zone on the server
+// and another in the browser, which is a hydration mismatch on a value nobody
+// would think to check.
+for (const [label, src] of [
+  ['BlogsList.tsx', LIST_SRC],
+  ['BlogRowMenu.tsx', ROWMENU_SRC],
+  ['BlogsFilterBar.tsx', FILTERBAR_SRC],
+  ['BlogStatusPill.tsx', PILL_SRC],
+] as const) {
+  eq(`${label} constructs no Date in the browser`, occurrences(stripComments(src), 'new Date('), 0);
+}
+
+// The skeleton and the page must pass AdminPage the SAME width token, or
+// loading.tsx renders at one measure and the page snaps to another on swap.
+// Both take the default here, so the default is read too rather than assumed.
+const BLOGS_SKELETON = region(
+  SKELETONS_SRC,
+  'export function BlogsListSkeleton(',
+  'export function SubmissionDetailSkeleton(',
+  'BlogsListSkeleton',
+);
+const widthPassed = (code: string, re: RegExp): string => code.match(re)?.[1] ?? 'wide';
+ok("AdminPage's own default width is 'wide'", /width = 'wide'/.test(ADMINPAGE_SRC));
+ok("the skeleton Shell's default width is 'wide'", /width = 'wide'/.test(SKELETONS_SRC));
+eq(
+  'the posts page and BlogsListSkeleton pass the same AdminPage width',
+  [
+    widthPassed(BLOGS_PAGE_SRC, /<AdminPage\s+width="(\w+)"/),
+    widthPassed(BLOGS_SKELETON, /<Shell[^>]*\swidth="(\w+)"/),
+  ],
+  ['wide', 'wide'],
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13. The real statements, against Neon (--db)
 // ═══════════════════════════════════════════════════════════════════════════
 // Everything above pins a DECISION. This half pins STATEMENTS, and it is the
 // only thing that can: every write door in this feature is either a

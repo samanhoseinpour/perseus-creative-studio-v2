@@ -55,6 +55,16 @@ export type AdminPostRow = {
   status: BlogPostStatus;
   wordCount: number;
   robotsIndex: boolean;
+  /** The concurrency token the single-post transition doors take. A row menu
+   *  is a per-post decision like the editor's, so Trash and Restore go through
+   *  `trashPost`/`restorePost` and get the version guard, rather than through
+   *  the bulk doors, whose `status <> …` predicate replaces it for a selection
+   *  nobody is looking at row by row. */
+  version: number;
+  /** The whole array, so the list can state how many there are while showing
+   *  the primary one. Never re-ordered here: position 0 IS the primary keyword
+   *  everywhere else in the editor. */
+  focusKeywords: string[];
   legacyId: number | null;
   publishAt: Date | null;
   publishedAt: Date | null;
@@ -95,6 +105,8 @@ export async function listAdminPosts(
         status: blogPosts.status,
         wordCount: blogPosts.wordCount,
         robotsIndex: blogPosts.robotsIndex,
+        version: blogPosts.version,
+        focusKeywords: blogPosts.focusKeywords,
         legacyId: blogPosts.legacyId,
         publishAt: blogPosts.publishAt,
         publishedAt: blogPosts.publishedAt,
