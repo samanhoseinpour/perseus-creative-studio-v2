@@ -590,6 +590,38 @@ export function blogUsageRefusal(
   return `This ${what} is still on ${named.join(' and ')}. Saved versions count too, because a post keeps every earlier version of itself, so nothing at all can point here before the ${what} can go.`;
 }
 
+/**
+ * The same two numbers as a plain sentence, for the screen that shows them
+ * BEFORE anybody clicks Delete: the row's readout, the disabled button's
+ * tooltip and the confirm.
+ *
+ * `blogUsageRefusal` is what the door says once a delete has been attempted
+ * and cannot go through; this is what the dialog says while the member is
+ * still deciding. Two composers rather than one because they are answering
+ * different questions, and one string bent to serve both would read as a
+ * refusal on a row nothing points at.
+ *
+ * IT NEVER ADDS THE TWO NUMBERS, for `blogUsageRefusal`'s reason: an author
+ * with one post and twelve earlier versions of it is not on thirteen posts.
+ * The post branch says "and its history" precisely so the number a member
+ * reads is the number of POSTS, with the versions named rather than folded
+ * into it. The zero branch is the one that actually reaches the confirm,
+ * since Delete is offered only when nothing points here.
+ */
+export function blogUsageSentence(
+  what: 'author' | 'category',
+  usage: { posts: number; revisions: number },
+): string {
+  const { posts, revisions } = usage;
+  if (posts === 0 && revisions === 0) {
+    return `No posts and no saved versions point at this ${what}.`;
+  }
+  if (posts === 0) {
+    return `${revisions} saved version${revisions === 1 ? '' : 's'} still point at this ${what}, from posts that have since moved elsewhere.`;
+  }
+  return `${posts} post${posts === 1 ? '' : 's'} and ${posts === 1 ? 'its' : 'their'} history still point at this ${what}.`;
+}
+
 // ── The revision snapshot ───────────────────────────────────────────────────
 
 /**

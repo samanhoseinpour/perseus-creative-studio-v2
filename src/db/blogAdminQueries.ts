@@ -503,6 +503,90 @@ export async function countPostsForCategory(id: string): Promise<BlogUsage> {
   return { posts: posts[0]?.n ?? 0, revisions: revisions[0]?.n ?? 0 };
 }
 
+/** The same counts for EVERY author and category at once, keyed by id. */
+export type BlogTaxonomyUsage = {
+  authors: Record<string, BlogUsage>;
+  categories: Record<string, BlogUsage>;
+};
+
+const ZERO_USAGE: BlogUsage = { posts: 0, revisions: 0 };
+
+/**
+ * What points at every taxonomy row, for the dialogs that offer Delete.
+ *
+ * The two doors above answer for ONE row, which is right for a delete that has
+ * already been clicked. The dialog needs the answer for every row before
+ * anything is clicked, and calling them per row would be four round trips per
+ * author plus four per category on every render of /admin/blogs.
+ *
+ * So it is TWO queries, not four: each groups by BOTH foreign keys at once and
+ * the pairs are folded in JS. The result set is bounded by the number of
+ * (author, category) combinations actually used, which is at most the number
+ * of rows in the table and is 38 posts today.
+ *
+ * It counts every row in both tables, with no status filter, because that is
+ * exactly what ON DELETE RESTRICT counts: a trashed post still holds its
+ * author, and so does every earlier version of a post that has since moved to
+ * somebody else.
+ */
+export async function blogTaxonomyUsage(): Promise<BlogTaxonomyUsage> {
+  const [posts, revisions] = await Promise.all([
+    db
+      .select({ authorId: blogPosts.authorId, categoryId: blogPosts.categoryId, n: count() })
+      .from(blogPosts)
+      .groupBy(blogPosts.authorId, blogPosts.categoryId),
+    db
+      .select({
+        authorId: blogPostRevisions.authorId,
+        categoryId: blogPostRevisions.categoryId,
+        n: count(),
+      })
+      .from(blogPostRevisions)
+      .groupBy(blogPostRevisions.authorId, blogPostRevisions.categoryId),
+  ]);
+
+  const usage: BlogTaxonomyUsage = { authors: {}, categories: {} };
+  const add = (
+    bucket: Record<string, BlogUsage>,
+    id: string,
+    key: keyof BlogUsage,
+    n: number,
+  ) => {
+    const row = (bucket[id] ??= { ...ZERO_USAGE });
+    row[key] += n;
+  };
+  for (const row of posts) {
+    add(usage.authors, row.authorId, 'posts', row.n);
+    add(usage.categories, row.categoryId, 'posts', row.n);
+  }
+  for (const row of revisions) {
+    add(usage.authors, row.authorId, 'revisions', row.n);
+    add(usage.categories, row.categoryId, 'revisions', row.n);
+  }
+  return usage;
+}
+
+/** One dashboard account a public byline can be linked to. */
+export type BylineAccount = { id: string; name: string; email: string };
+
+/**
+ * The accounts the author dialog's byline picker offers.
+ *
+ * Slim on purpose: `listAdminUsers` in adminQueries.ts is the /admin/users
+ * roster and carries three left joins with aggregates over passkeys, sessions
+ * and push devices, none of which a picker needs. Its caller reads it ONLY for
+ * an owner or a superadmin, matching `bylineColumn`'s own gate in
+ * _actions/blogTaxonomy.ts: an ungated read would be a wasted round trip for
+ * every other member and a list of colleagues fetched for somebody who cannot
+ * act on it.
+ */
+export function listBylineAccounts(): Promise<BylineAccount[]> {
+  return db
+    .select({ id: user.id, name: user.name, email: user.email })
+    .from(user)
+    .orderBy(asc(user.name));
+}
+
 // ── Internal links and slugs ────────────────────────────────────────────────
 
 export type LinkTarget = { slug: string; title: string; status: BlogPostStatus };

@@ -98,6 +98,7 @@ import {
   contentFingerprint,
   authorPublicFingerprint,
   blogUsageRefusal,
+  blogUsageSentence,
   categoryPublicFingerprint,
   isPlaceholderSlug,
   newDraftSlug,
@@ -3750,6 +3751,37 @@ ok(
   ),
 );
 
+// ── The same two numbers, BEFORE anybody clicks Delete ──────────────────────
+// `blogUsageRefusal` is what the door says once a delete cannot go through;
+// `blogUsageSentence` is what the dialog says while somebody is still deciding,
+// on the row, on the disabled button's tooltip and in the confirm. It has the
+// same one rule: NEVER add the two numbers. An author on one post with twelve
+// earlier versions of it is not on thirteen posts, and a screen that said so
+// would send somebody hunting for ten posts that do not exist.
+
+eq(
+  'the branch the confirm actually reaches names both halves as zero',
+  blogUsageSentence('author', { posts: 0, revisions: 0 }),
+  'No posts and no saved versions point at this author.',
+);
+{
+  const onlyHistory = blogUsageSentence('category', { posts: 0, revisions: 12 });
+  ok('history with no posts left is named for what it is', onlyHistory.includes('12 saved versions'));
+  ok('and never reported as posts', !onlyHistory.includes('12 posts'));
+  ok('and never as "0 posts", which reads as safe to delete', !onlyHistory.includes('0 post'));
+  ok('the noun follows the row that was clicked', onlyHistory.includes('this category'));
+}
+{
+  const one = blogUsageSentence('author', { posts: 1, revisions: 3 });
+  ok('one post owns ITS history', one.includes('1 post and its history'));
+  ok('and the number a member reads is the number of POSTS', !one.includes('4'));
+}
+{
+  const many = blogUsageSentence('author', { posts: 3, revisions: 12 });
+  ok('several posts own THEIR history', many.includes('3 posts and their history'));
+  ok('and the two are still never added', !many.includes('15'));
+}
+
 // ── What the fields schema will not carry ───────────────────────────────────
 
 const AUTHOR_FIELDS = {
@@ -4477,6 +4509,214 @@ eq(
   [widthPassed(BLOGS_PAGE_SRC, 'AdminPage'), widthPassed(BLOGS_SKELETON, 'Shell')],
   ['wide', 'wide'],
 );
+
+// The header now carries three unconditional controls, and the skeleton has to
+// reserve all three: one pill under a header that renders three leaves the row
+// a control short and reflows it the moment loading.tsx swaps for the page.
+// Counted on both sides from their own source rather than written down here.
+eq(
+  'the posts header and its skeleton reserve the same number of controls',
+  [
+    [
+      ...region(
+        BLOGS_PAGE_SRC,
+        '<div className="flex flex-wrap items-center gap-2">',
+        '</header>',
+        "the posts header's control row",
+      ).matchAll(/<\w+Button\b/g),
+    ].length,
+    [
+      ...region(
+        BLOGS_SKELETON,
+        'action={',
+        '<GlassPanel',
+        "the skeleton's header action",
+      ).matchAll(/'w-\d+'/g),
+    ].length,
+  ],
+  [3, 3],
+);
+
+// ---- 8. The two taxonomy dialogs ------------------------------------------
+// The authors and categories write doors get a screen, off the posts list
+// header. Everything below is a decision a reader cannot check by looking at
+// the dialog, because in every case the wrong version still renders.
+
+const AUTHORS_SRC = readRepoFile('../src/components/Admin/blogs/AuthorsDialog.tsx');
+const CATEGORIES_SRC = readRepoFile('../src/components/Admin/blogs/CategoriesDialog.tsx');
+const TAXONOMY_FORM_SRC = readRepoFile('../src/components/Admin/blogs/taxonomyForm.ts');
+const TAXONOMY_TYPES_SRC = readRepoFile('../src/components/Admin/blogs/taxonomyTypes.ts');
+const GLASSDIALOG_SRC = readRepoFile('../src/components/Admin/GlassDialog.tsx');
+
+const TAXONOMY_FILES = [
+  ['AuthorsDialog.tsx', AUTHORS_SRC],
+  ['CategoriesDialog.tsx', CATEGORIES_SRC],
+  ['taxonomyForm.ts', TAXONOMY_FORM_SRC],
+  ['taxonomyTypes.ts', TAXONOMY_TYPES_SRC],
+] as const;
+
+for (const [label, src] of TAXONOMY_FILES) {
+  ok(`read ${label} (drift guard)`, src.length > 500);
+}
+
+for (const [label, src] of TAXONOMY_FILES) {
+  eq(
+    `no em dash in ${label} outside the empty-cell glyph`,
+    stripComments(src).replace(EMPTY_CELL_GLYPH, '').includes('—'),
+    false,
+  );
+  eq(`${label} constructs no Date in the browser`, occurrences(stripComments(src), 'new Date('), 0);
+}
+
+// THE BUNDLE RULE, and it is the one thing here that would cost every visitor
+// rather than every admin. `blogPostSchema.ts` imports `blogBody.ts`, which
+// imports @tiptap/core, StarterKit and the table kit at module scope, and
+// Turbopack merges every eagerly referenced client module into ONE shared
+// chunk group that all 86 routes load. So validating in the browser the way
+// careers does would put the whole Tiptap document schema in front of the
+// marketing site to save one round trip on a form somebody opens by hand.
+for (const [label, src] of TAXONOMY_FILES) {
+  const code = stripComments(src);
+  eq(
+    `${label} pulls neither zod nor the Tiptap body schema into the client graph`,
+    [
+      code.includes("from '@/lib/blogPostSchema'"),
+      code.includes("from '@/lib/blogBody'"),
+      code.includes("from 'zod'"),
+      code.includes("from '@tiptap/"),
+    ],
+    [false, false, false, false],
+  );
+}
+
+// Every menu in this dashboard comes from Admin/DropdownMenu.tsx, and the way
+// that stays true in a file that legitimately imports radix-ui for Dialog is
+// that the import names Dialog and nothing else.
+for (const [label, src] of [
+  ['AuthorsDialog.tsx', AUTHORS_SRC],
+  ['CategoriesDialog.tsx', CATEGORIES_SRC],
+] as const) {
+  eq(
+    `${label} takes only Dialog from radix-ui`,
+    [...stripComments(src).matchAll(/import \{([^}]*)\} from 'radix-ui';/g)].map((m) =>
+      m[1].trim(),
+    ),
+    ['Dialog'],
+  );
+}
+
+// The footer sits OUTSIDE the scroller and therefore outside the <form>, so the
+// Save button has to name the form it submits. Counted in a pair: an id with no
+// button is a dead Save, and a button naming an id nothing carries is the same
+// bug from the other end.
+{
+  const code = stripComments(AUTHORS_SRC);
+  ok('the author form id is a module-level constant', /^const FORM_ID = '[a-z-]+';$/m.test(code));
+  eq(
+    'and the pinned footer submit names it, exactly once each way',
+    [occurrences(code, 'id={FORM_ID}'), occurrences(code, 'form={FORM_ID}')],
+    [1, 1],
+  );
+}
+
+// Neither dialog hand-rolls a scroller: GlassDialog owns it, and its ONE rule
+// is read from GlassDialog's own source rather than restated. `flex: 1 1 0%`
+// zeroes the basis, and Content is `max-h-full` rather than `h-full`, so there
+// is no free space to grow back from and the body collapses to nothing.
+{
+  const scroller = region(
+    stripComments(GLASSDIALOG_SRC),
+    'ref={scrollerRef}',
+    '{children}',
+    "GlassDialog's scroller",
+  );
+  ok('the dialog scroller carries no flex-1', !scroller.includes('flex-1'));
+  ok('it shrinks against the pinned slots instead', scroller.includes('min-h-0 overflow-y-auto'));
+  for (const [label, src] of [
+    ['AuthorsDialog.tsx', AUTHORS_SRC],
+    ['CategoriesDialog.tsx', CATEGORIES_SRC],
+  ] as const) {
+    eq(`${label} opens no scroller of its own`, occurrences(stripComments(src), 'overflow-y-auto'), 0);
+    // As JSX props rather than as substrings: `xheader={` contains `header={`,
+    // and an assertion a typo satisfies is not an assertion.
+    ok(
+      `${label} uses the pinned header and footer slots`,
+      /\n\s+header=\{/.test(src) && /\n\s+footer=\{/.test(src),
+    );
+  }
+}
+
+// The byline link is a PRIVILEGE change, not a copy edit: `bylineColumn` in
+// _actions/blogTaxonomy.ts lets only an owner or a superadmin name `user_id`.
+// Rendering the picker to anybody else would be a control the server refuses,
+// and sending `null` instead of `undefined` would CLEAR a link on every save
+// by somebody who was never shown it.
+{
+  const authors = stripComments(AUTHORS_SRC);
+  ok('the account picker renders only under the same gate', authors.includes('{canLinkAccount && ('));
+  ok(
+    'and an ungated save leaves the column unnamed rather than clearing it',
+    authors.includes("canLinkAccount ? (userId === '' ? null : userId) : undefined"),
+  );
+  const page = stripComments(BLOGS_PAGE_SRC);
+  ok('the page reads the accounts only for that viewer', page.includes('profile.superadmin ? listBylineAccounts()'));
+  ok('and hands the same flag to the dialog', page.includes('canLinkAccount={profile.superadmin}'));
+}
+
+// A Blob URL through <Img>/<ImgClient> renders the Perseus wordmark, because
+// `resolveImageSrc` swaps anything outside /images/ for the placeholder. So an
+// uploaded photo draws the studio logo where the face should be, which looks
+// exactly like a bug and is one. Both renderers are read off the source rather
+// than assumed present.
+{
+  const authors = stripComments(AUTHORS_SRC);
+  eq('an uploaded photo goes through MediaImage wherever it is drawn', occurrences(authors, '<MediaImage'), 2);
+  eq(
+    'and every ImgClient is handed a static /images path, never an uploaded one',
+    [...authors.matchAll(/<ImgClient[\s\S]*?src=\{([^}]+)\}/g)].map((m) => m[1]),
+    ['author.imageStaticPath', 'staticPath'],
+  );
+}
+
+// A slug is immutable after creation and the doors refuse a change with a
+// sentence. An edit therefore re-sends the STORED slug: binding the field
+// instead would turn every rename attempt into a refusal on a control the
+// screen offered.
+ok(
+  'an author edit re-sends the stored slug',
+  stripComments(AUTHORS_SRC).includes('slug: editing ? editing.slug : values.slug'),
+);
+ok(
+  'and a category edit sends the row’s own',
+  stripComments(CATEGORIES_SRC).includes('slug: category.slug'),
+);
+
+// The SEO pair is the one thing on this screen a writer otherwise meets as a
+// refusal somewhere else: `categoryReady` in _actions/blogPosts.ts will not
+// publish a post into a category missing either half, and `branding` is the
+// live row carrying neither. Stated under the pair in BOTH forms, or the add
+// form quietly creates the next one.
+eq('both category forms state the publish rule under the SEO pair', occurrences(CATEGORIES_SRC, '<SeoNote'), 2);
+ok(
+  'and the sentence names publishing rather than SEO in the abstract',
+  CATEGORIES_SRC.includes('until both of these are filled in'),
+);
+
+// Delete is offered only when NOTHING points at the row, and "nothing" spans
+// both tables: `blog_posts` and `blog_post_revisions` each carry the foreign
+// key with ON DELETE RESTRICT. Gating on the posts alone would offer a Delete
+// on an author reassigned away from every live post, whose earlier versions
+// still name them, and the door would refuse it.
+for (const [label, src] of [
+  ['AuthorsDialog.tsx', AUTHORS_SRC],
+  ['CategoriesDialog.tsx', CATEGORIES_SRC],
+] as const) {
+  ok(
+    `${label} counts the saved versions as well as the posts`,
+    /usage\.posts > 0 \|\|[\w. ]{0,20}usage\.revisions > 0/.test(stripComments(src)),
+  );
+  ok(`${label} quotes the composer rather than writing its own count`, src.includes('blogUsageSentence('));
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 12. The real statements, against Neon (--db)

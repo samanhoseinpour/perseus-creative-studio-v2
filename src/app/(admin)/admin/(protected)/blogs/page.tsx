@@ -11,6 +11,13 @@ import BlogsList, {
   NewPostButton,
   type BlogPostItem,
 } from '@/components/Admin/blogs/BlogsList';
+import { AuthorsButton } from '@/components/Admin/blogs/AuthorsDialog';
+import { CategoriesButton } from '@/components/Admin/blogs/CategoriesDialog';
+import type {
+  BlogAuthorItem,
+  BlogCategoryItem,
+  BylineAccountOption,
+} from '@/components/Admin/blogs/taxonomyTypes';
 import {
   panelDivider,
   postGrid,
@@ -21,8 +28,10 @@ import {
 } from '@/components/Admin/blogs/listBox';
 import { formatDate, formatDateTime, formatRelative } from '@/components/Admin/inbox/format';
 import {
+  blogTaxonomyUsage,
   listAdminPosts,
   listAuthorsAdmin,
+  listBylineAccounts,
   listCategoriesAdmin,
   statusCounts,
   type AdminPostRow,
@@ -45,6 +54,10 @@ export const metadata: Metadata = {
   title: 'Blog',
   description: 'The posts behind the public blog.',
 };
+
+/** A taxonomy row nothing points at is absent from the grouped usage read,
+ *  which is a row with no posts rather than a row with no answer. */
+const NO_USAGE = { posts: 0, revisions: 0 } as const;
 
 /**
  * /admin/blogs: every post, on one page, narrowed by the status tabs and the
@@ -75,15 +88,21 @@ export default async function BlogsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireArea('blogs', '/admin');
+  const profile = await requireArea('blogs', '/admin');
   const params = parseBlogListParams(await searchParams);
   const tz = await viewerZone();
 
-  const [page, counts, authors, categories] = await Promise.all([
+  // The accounts read is GATED rather than masked afterwards: only an owner or
+  // a superadmin may link a byline (`bylineColumn` in _actions/blogTaxonomy.ts
+  // refuses everybody else), so for anybody else this is a round trip whose
+  // answer is a list of colleagues they could not act on.
+  const [page, counts, authors, categories, usage, accounts] = await Promise.all([
     listAdminPosts(params),
     statusCounts(params),
     listAuthorsAdmin(),
     listCategoriesAdmin(),
+    blogTaxonomyUsage(),
+    profile.superadmin ? listBylineAccounts() : Promise.resolve([]),
   ]);
 
   const authorOptions: BlogFilterOption[] = authors.map((a) => ({
@@ -93,6 +112,38 @@ export default async function BlogsPage({
   const categoryOptions: BlogFilterOption[] = categories.map((c) => ({
     value: c.slug,
     label: c.title,
+  }));
+
+  const authorItems: BlogAuthorItem[] = authors.map((a) => ({
+    id: a.id,
+    slug: a.slug,
+    name: a.name,
+    kind: a.kind,
+    role: a.role,
+    bio: a.bio,
+    imageStaticPath: a.imageStaticPath ?? '',
+    imageMedia: a.imageMedia ?? null,
+    ogImageStaticPath: a.ogImageStaticPath ?? '',
+    sameAs: a.sameAs,
+    knowsAbout: a.knowsAbout,
+    tags: a.tags,
+    location: a.location ?? null,
+    sortIndex: a.sortIndex,
+    userId: a.userId ?? '',
+    usage: usage.authors[a.id] ?? NO_USAGE,
+  }));
+  const categoryItems: BlogCategoryItem[] = categories.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    title: c.title,
+    seoTitle: c.seoTitle ?? '',
+    seoDescription: c.seoDescription ?? '',
+    sortIndex: c.sortIndex,
+    usage: usage.categories[c.id] ?? NO_USAGE,
+  }));
+  const accountOptions: BylineAccountOption[] = accounts.map((a) => ({
+    id: a.id,
+    label: `${a.name} (${a.email})`,
   }));
 
   const items: BlogPostItem[] = page.rows.map((row) => toItem(row, tz));
@@ -116,7 +167,15 @@ export default async function BlogsPage({
             Drafts, scheduled posts and everything live on the public blog.
           </p>
         </div>
-        <NewPostButton />
+        <div className="flex flex-wrap items-center gap-2">
+          <AuthorsButton
+            authors={authorItems}
+            accounts={accountOptions}
+            canLinkAccount={profile.superadmin}
+          />
+          <CategoriesButton categories={categoryItems} />
+          <NewPostButton />
+        </div>
       </header>
 
       <GlassPanel className="mt-6">

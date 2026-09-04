@@ -847,7 +847,16 @@ export function BlogsListSkeleton() {
         eyebrow="Website"
         title="Blog"
         subtitle="Drafts, scheduled posts and everything live on the public blog."
-        action={<SkeletonPill className={cn(HEADER_CONTROL, 'w-28')} />}
+        // Authors, Categories, New post. All three are unconditional, so all
+        // three are reserved: one pill under a header that renders three
+        // leaves the row a control short and reflows it on swap.
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {['w-28', 'w-32', 'w-28'].map((w) => (
+              <SkeletonPill key={w} className={cn(HEADER_CONTROL, w)} />
+            ))}
+          </div>
+        }
       />
 
       <GlassPanel className="mt-6">
