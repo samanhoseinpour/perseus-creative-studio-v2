@@ -21,6 +21,7 @@ export const ADMIN_AREAS = [
   'projects',
   'clients',
   'careers',
+  'blogs',
   'tasks',
   'leaderboard',
   'reports',
@@ -46,6 +47,9 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   // The job openings behind /contact/careers (/admin/careers) — website
   // content like the two above, so it sits with them.
   careers: 'Careers',
+  // The posts behind /blogs. Website content like the two above, so it sits
+  // with them.
+  blogs: 'Blog',
   tasks: 'Tasks',
   leaderboard: 'Leaderboard',
   // Per-client monthly reporting (/admin/reports) — the client-facing numbers.

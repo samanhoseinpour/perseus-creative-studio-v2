@@ -50,6 +50,7 @@ export type AdminHelpKey =
   | 'projects'
   | 'clients'
   | 'careers'
+  | 'blogs'
   | 'feedback'
   | 'my-pay'
   | 'payroll'
@@ -408,6 +409,76 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'Deleting a role is permanent, but applications keep the role’s name, so the Applications inbox never loses it. The confirm shows how many applications point at the role.',
       'Location is "Remote" for every role today. If you post an on-site role, the careers page and the FAQ automatically stop claiming every role is remote.',
       'Editing an open or filled role pings search engines for you; edits to drafts and reordering do not.',
+    ],
+  },
+
+  blogs: {
+    title: 'How Blog works',
+    intro:
+      'Write, schedule and publish the articles behind the public blog, and manage the authors and categories they belong to.',
+    sections: [
+      {
+        heading: 'The posts list',
+        bullets: [
+          'One row per post: its title and address, status, author, category, the keyword it targets, when it was last updated, and when it was or will be published.',
+          'Tabs above the list narrow it to one status at a time: everything but trash, draft, scheduled, published, archived, or trash on its own, each showing how many posts it holds.',
+          'The search box matches a post\'s title, its address, its description, the author\'s name, or the category, so a word from any of those finds it.',
+          'Starting a new post creates an empty draft and opens straight into the editor.',
+          'Each row\'s menu opens the editor, opens a preview of the draft, opens the live article once it is published, or moves the post to trash. A trashed post\'s menu offers restoring it instead, or removing it for good. Selecting several rows lets you trash or restore them together.',
+        ],
+      },
+      {
+        heading: 'Writing and saving',
+        bullets: [
+          'Everything you type saves itself every couple of seconds while you work, so there is nothing to save by hand as you go.',
+          'An explicit save keeps a numbered copy of the post exactly as it stands, one you can come back to later. The saving that happens automatically in the background does not: it only protects your latest words and leaves no version to return to.',
+          'Publishing works the same way as an explicit save, and it is also what actually makes the post live, or sets the moment it will go live.',
+          'The body is where the writing happens. Beside it, one pane, the Post pane, holds everything else about the post itself: its address, author, category, excerpt, hero image, takeaways, FAQs, sources and any related posts. A second, the SEO pane, holds everything for search engines: the search title and description with a preview of how the post will look in search results, an address to point search engines at instead when one is needed, whether they may index the page and follow its links, the image and text used when it is shared, and the keywords it targets.',
+          'Once a post has ever gone live, its address is locked, so a link someone has already saved keeps working.',
+        ],
+      },
+      {
+        heading: 'Preview',
+        bullets: [
+          'Preview opens the draft in a new tab exactly as it will look once published, with a strip at the bottom marking it a draft so it is never mistaken for the live page.',
+          'It is never public. Nobody outside the team can open it, and search engines are told to ignore it.',
+          'Votes and sharing are switched off in preview, since a draft has not been read by anyone yet.',
+        ],
+      },
+      {
+        heading: 'Scheduling',
+        bullets: [
+          'Instead of publishing right away, set a day and time and the post stays a draft until then. The editor always states which calendar day that time lands on for the studio, since a time close to midnight can fall on the next day somewhere else.',
+          'A background job checks every fifteen minutes and publishes anything whose time has come, so a scheduled post can go live up to that long after the moment you picked.',
+          'The time can be moved at any point before it fires. Editing the writing of a scheduled post changes only the draft sitting behind it, so bring those changes into the scheduled version before the time arrives, or it publishes with the older words.',
+          'A scheduled post can be published right away instead of waiting, or pulled back to a plain draft.',
+        ],
+      },
+      {
+        heading: 'Revisions',
+        bullets: [
+          'Every explicit save or publish keeps a numbered copy of the post as it stood at that moment, so nothing already saved is lost by continuing to edit.',
+          'Open the history to see every past version and preview any one of them.',
+          'Restoring a version brings its writing and its SEO details back into the draft. It never changes the post\'s address or its publish date; those stay exactly as they were.',
+        ],
+      },
+      {
+        heading: 'What the statuses mean',
+        bullets: [
+          'A draft is only visible here, never on the public site.',
+          'A scheduled post is waiting for its publish time, and stays off the public site until then.',
+          'A published post is live on the public site right now.',
+          'An archived post was live before and has since been taken down. The page is gone, but its history and any votes it collected are kept.',
+          'A trashed post is marked for deletion. Restore it to bring it back, or remove it for good, which also deletes its images and cannot be undone.',
+        ],
+      },
+    ],
+    tips: [
+      'A post needs an author and a category before it can publish. Both have their own management screens reached from this page.',
+      'Editing a published post updates the live page immediately. Its "Updated" date only moves when the writing itself changes; a change to only the SEO fields updates the page just as much but leaves that date alone.',
+      'Moving a live post to trash asks you to confirm first, since the page comes down the moment you do.',
+      'Removing a trashed post for good also deletes every image it used, and cannot be undone. Votes it collected before stay on the Feedback page, shown as "(removed post)".',
+      'If you also hold the Activity log area, the editor links to that post\'s full history of changes.',
     ],
   },
 

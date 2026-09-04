@@ -20,6 +20,7 @@ import {
   LuCoins,
   LuRepeat,
   LuHeartPulse,
+  LuNewspaper,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -324,6 +325,16 @@ const CAREERS: AdminNavItem = {
   area: 'careers',
   keywords: ['jobs', 'roles', 'openings', 'hiring', 'positions'],
 };
+// The posts behind /blogs. Website content (it sits with Projects, Clients
+// and Careers), and no badge: a post count is a readout, not a queue to
+// triage, the same reasoning Careers carries none for.
+const BLOGS: AdminNavItem = {
+  label: 'Blog',
+  href: '/admin/blogs',
+  icon: LuNewspaper,
+  area: 'blogs',
+  keywords: ['posts', 'articles', 'writing', 'cms', 'seo'],
+};
 const INQUIRIES: AdminNavItem = {
   label: 'Inquiries',
   href: '/admin/inquiries',
@@ -363,7 +374,7 @@ export const ADMIN_NAV_TOP: AdminNavItem[] = [OVERVIEW];
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { label: 'Work', items: [TASKS, LEADERBOARD, TICKETS, REPORTS] },
   { label: 'Inbox', items: [INQUIRIES, APPLICATIONS] },
-  { label: 'Website', items: [PROJECTS, CLIENTS, CAREERS, FEEDBACK] },
+  { label: 'Website', items: [PROJECTS, CLIENTS, CAREERS, BLOGS, FEEDBACK] },
   // Money is its own group rather than a corner of Team: Team is about people
   // and permissions, and these four rows are about where the money goes. Spend
   // leads because it is the view the other three feed.
@@ -403,6 +414,8 @@ const DETAIL_LABELS: Record<string, string> = {
   '/admin/tickets': 'Ticket',
   '/admin/projects/new': 'New project',
   '/admin/projects': 'Project',
+  '/admin/blogs/new': 'New post',
+  '/admin/blogs': 'Post',
   '/admin/clients': 'Client',
   '/admin/reports': 'Report',
   // Longest prefix first — '/admin/payroll' would otherwise swallow both.
