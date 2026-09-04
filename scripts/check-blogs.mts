@@ -41,10 +41,17 @@ import { readFileSync } from 'node:fs';
 
 import { blogPostStatus } from '@/db/schema';
 import {
+  blogMediaSchema,
+  stripTrailingEmptyParagraphs,
+  validateBlogBody,
+  type BlogDoc,
+} from '@/lib/blogBody';
+import {
   BLOG_POST_STATUSES,
   BLOG_POST_STATUS_LABELS,
   ROBOTS_EXTRA_KEYS,
   ROBOTS_EXTRA_KINDS,
+  ROBOTS_PREVIEW_VALUES,
   contentFingerprint,
   isPlaceholderSlug,
   newDraftSlug,
@@ -56,8 +63,16 @@ import {
   type BlogPostStatus,
   type BlogSnapshotView,
 } from '@/lib/blogFields';
+import {
+  blogDraftSchema,
+  blogPostFieldsSchema,
+  blogPublishSchema,
+  blogRobotsExtraSchema,
+  flattenBlogIssues,
+} from '@/lib/blogPostSchema';
 import { STUDIO_TZ, dayNoonIn, dayStartIn, dayTimeIn } from '@/lib/calendar';
 import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
+import { PUBLIC_BLOB_HOST } from '@/lib/publicBlobFields';
 
 const TEHRAN = 'Asia/Tehran';
 
@@ -731,6 +746,350 @@ eq(
   (dayStartIn(STUDIO_TZ, '2026-03-09').getTime() - dayStartIn(STUDIO_TZ, SPRING).getTime()) / 3_600_000,
   23,
 );
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11. The draft / publish split, the media door, and canonical trailing
+//     paragraphs
+// ═══════════════════════════════════════════════════════════════════════════
+// Two doors save a post and they must disagree in exactly one way. Autosave
+// has to accept a half-written post, or it fails on the first keystroke of
+// every new one; publish has to refuse anything that renders wrong in public.
+// Everything else about them must be the same, because the value is STORED
+// either way: a draft may be incomplete, it may not be malformed.
+//
+// Each mistake here is silent in its own way. A draft schema that relaxed
+// SHAPES as well as emptiness would store a `javascript:` source href that
+// step 4's inspectors read back. A hero rule written per-field can never say
+// "one of these two", and `toHero` in blogStore.ts turns a missing hero into
+// `{ type: 'static', src: '' }`, so a published article's OG image silently
+// degrades to the wordmark placeholder. A robots value carrying a comma
+// injects a second directive into <meta name="robots">, because Next joins
+// the resolved entries with ', '. And a trailing empty paragraph appended by
+// TrailingNode moves contentFingerprint, which moves the visible "Updated"
+// byline, the sitemap lastmod and JSON-LD dateModified on a post nobody
+// meaningfully edited.
+
+const HERO_PATH = '/images/blogs/production/hero.avif';
+const rung = (pathname: string, host = PUBLIC_BLOB_HOST) => ({
+  url: `https://${host}/${pathname}`,
+  pathname,
+});
+const MEDIA = {
+  variants: { full: { ...rung('blogs/hero.avif'), width: 1600, height: 900 } },
+  blurDataUrl: 'data:image/webp;base64,AAAA',
+};
+const realBody = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] };
+
+/** Publish-ready: every required field filled, a hero, a real body. */
+const POST = {
+  slug: 'a-post',
+  title: 'T',
+  description: 'D',
+  categorySlug: 'production',
+  authorSlug: 'saman-hoseinpour',
+  serviceSlug: null,
+  heroStaticPath: HERO_PATH,
+  heroAlt: 'alt',
+  heroCaption: null,
+  keyTakeaways: ['a'],
+  faqs: [{ question: 'q', answer: 'a' }],
+  sources: [{ title: 's', href: 'https://a.b/c' }],
+  entities: [{ name: 'n', sameAs: ['https://www.wikidata.org/wiki/Q1'], primary: true }],
+  relatedSlugs: ['y'],
+  seoTitle: 'st',
+  seoDescription: 'sd',
+  canonicalOverride: null,
+  ogTitle: 'ot',
+  ogDescription: 'od',
+  twitterCard: 'summary_large_image',
+  robotsIndex: true,
+  robotsFollow: true,
+  focusKeywords: ['k'],
+  llmsInclude: true,
+  heroMedia: null,
+  ogImageStaticPath: null,
+  ogImageMedia: null,
+  emitLegacyMetaKeywords: false,
+  robotsExtra: null,
+  body: realBody,
+};
+
+const draftTakes = (label: string, patch: Record<string, unknown>) =>
+  ok(`draft accepts ${label}`, blogDraftSchema.safeParse({ ...POST, ...patch }).success);
+const draftRefuses = (label: string, patch: Record<string, unknown>) =>
+  ok(`draft refuses ${label}`, !blogDraftSchema.safeParse({ ...POST, ...patch }).success);
+const publishTakes = (label: string, patch: Record<string, unknown>) =>
+  ok(`publish accepts ${label}`, blogPublishSchema.safeParse({ ...POST, ...patch }).success);
+const publishIssues = (patch: Record<string, unknown>): Record<string, string> => {
+  const parsed = blogPublishSchema.safeParse({ ...POST, ...patch });
+  return parsed.success ? {} : flattenBlogIssues(parsed.error);
+};
+
+ok('the publish-ready fixture really passes both doors (not a vacuous baseline)',
+  blogDraftSchema.safeParse(POST).success && blogPublishSchema.safeParse(POST).success);
+
+// ---- 1. Empty is a draft, not a publish -----------------------------------
+// The seven required non-empty strings, all blank at once. This is what the
+// editor holds one keystroke after "New post".
+const BLANK_TEXT = {
+  title: '',
+  description: '',
+  heroAlt: '',
+  seoTitle: '',
+  seoDescription: '',
+  ogTitle: '',
+  ogDescription: '',
+};
+draftTakes('every required text field empty at once', BLANK_TEXT);
+ok('publish refuses the same object', !blogPublishSchema.safeParse({ ...POST, ...BLANK_TEXT }).success);
+// It has to NAME them, or the editor can only say "something is wrong".
+eq(
+  'publish names every empty required field, and nothing else',
+  Object.keys(publishIssues(BLANK_TEXT)).sort(),
+  ['description', 'heroAlt', 'ogDescription', 'ogTitle', 'seoDescription', 'seoTitle', 'title'],
+);
+// Each one on its own, so the sweep above cannot pass by accident on a schema
+// that only refuses the first blank it meets.
+for (const field of Object.keys(BLANK_TEXT)) {
+  draftTakes(`a blank ${field}`, { [field]: '' });
+  eq(`publish refuses a blank ${field} and says so on that field`, Object.keys(publishIssues({ [field]: '' })), [field]);
+}
+
+// ---- 2. Relaxed means empty-allowed, NOT shape-free ------------------------
+// The value is stored either way, so a draft that took a malformed URL would
+// hand step 4's inspectors something it can never render.
+draftRefuses('a canonicalOverride with a fragment', { canonicalOverride: 'https://a.b/x#frag' });
+draftRefuses('an http canonicalOverride', { canonicalOverride: 'http://a.b/x' });
+draftRefuses('a canonicalOverride with credentials', { canonicalOverride: 'https://u:p@a.b/x' });
+draftRefuses('a canonicalOverride carrying a control character', {
+  canonicalOverride: `https://a.b/${String.fromCharCode(1)}x`,
+});
+draftRefuses('a javascript: source href', { sources: [{ title: 's', href: 'javascript:alert(1)' }] });
+draftRefuses('a protocol-relative source href', { sources: [{ title: 's', href: '//evil.com/x' }] });
+draftRefuses('a relative source href', { sources: [{ title: 's', href: '/blogs/x' }] });
+draftRefuses('a sameAs that is not a URL', { entities: [{ name: 'n', sameAs: ['nope'], primary: true }] });
+draftRefuses('an uppercase slug', { slug: 'A-Post' });
+draftRefuses('the reserved slug', { slug: 'authors' });
+draftRefuses('a hero path outside /images', { heroStaticPath: '/x.avif' });
+draftRefuses('a title over its cap', { title: 'a'.repeat(301) });
+draftRefuses('six key takeaways', { keyTakeaways: ['1', '2', '3', '4', '5', '6'] });
+draftRefuses('an unknown key', { excerpt: 'x' });
+// An empty ogImageStaticPath is malformed rather than half-written: its
+// absence is spelled `null`, so '' must fail on BOTH doors.
+draftRefuses('an empty ogImageStaticPath', { ogImageStaticPath: '' });
+
+// ---- 3. The hero refinement ------------------------------------------------
+// Two independently nullable columns cannot express "at least one of these",
+// which is the whole reason this is a refine on the WHOLE object.
+draftTakes('no hero at all (a draft is allowed to have none yet)', { heroStaticPath: null, heroMedia: null });
+eq(
+  'publish refuses a post with neither hero half, on the hero control',
+  publishIssues({ heroStaticPath: null, heroMedia: null }),
+  { heroMedia: 'Add a hero image before publishing.' },
+);
+publishTakes('a static hero alone', { heroStaticPath: HERO_PATH, heroMedia: null });
+publishTakes('an uploaded hero alone', { heroStaticPath: null, heroMedia: MEDIA });
+publishTakes('both hero halves', { heroStaticPath: HERO_PATH, heroMedia: MEDIA });
+
+// ---- 4. The empty-body refinement -----------------------------------------
+// Publishing a blank article is one keystroke away, and schema-valid: an empty
+// paragraph is a legal node.
+eq(
+  'publish refuses a body of one empty paragraph, on the body control',
+  publishIssues({ body: { type: 'doc', content: [{ type: 'paragraph' }] } }),
+  { body: 'This post has no content yet. Write the article before publishing.' },
+);
+ok('publish refuses a body of several empty paragraphs', Boolean(
+  publishIssues({ body: { type: 'doc', content: [{ type: 'paragraph' }, { type: 'paragraph', content: [] }] } }).body,
+));
+ok('publish refuses a doc with no content array', Boolean(publishIssues({ body: { type: 'doc' } }).body));
+ok('publish refuses an absent body', Boolean(publishIssues({ body: undefined }).body));
+publishTakes('a body with real content', { body: realBody });
+publishTakes('a body whose real content follows an empty paragraph', {
+  body: { type: 'doc', content: [{ type: 'paragraph' }, ...realBody.content] },
+});
+draftTakes('a body of one empty paragraph', { body: { type: 'doc', content: [{ type: 'paragraph' }] } });
+draftTakes('no body at all', { body: undefined });
+
+// ---- 5. blogMediaSchema, the door the hero and the OG image had none of ----
+// A SECURITY predicate: *.public.blob.vercel-storage.com matches every Vercel
+// tenant and next/image never consults remotePatterns under a custom loader,
+// so `url === publicBlobUrl(pathname)` is the only thing between an
+// editor-typed URL and an anonymous visitor's <img src>.
+ok('media: a full ladder on our store', blogMediaSchema.safeParse({
+  variants: {
+    full: { ...rung('blogs/a/hero.avif'), width: 1600, height: 900 },
+    w960: rung('blogs/a/hero-960.avif'),
+    w640: rung('blogs/a/hero-640.avif'),
+    w384: rung('blogs/a/hero-384.avif'),
+  },
+  blurDataUrl: 'data:image/webp;base64,AAAA',
+}).success);
+ok('media: the master alone, with a null blur', blogMediaSchema.safeParse({
+  variants: { full: { ...rung('blogs/hero.avif'), width: 8, height: 6 } },
+  blurDataUrl: null,
+}).success);
+ok('media: a master on ANOTHER blob tenant is refused', !blogMediaSchema.safeParse({
+  variants: { full: { ...rung('blogs/hero.avif', 'other.public.blob.vercel-storage.com'), width: 8, height: 6 } },
+  blurDataUrl: null,
+}).success);
+ok('media: a RUNG on another blob tenant is refused too', !blogMediaSchema.safeParse({
+  variants: {
+    full: { ...rung('blogs/hero.avif'), width: 8, height: 6 },
+    w640: rung('blogs/hero-640.avif', 'other.public.blob.vercel-storage.com'),
+  },
+  blurDataUrl: null,
+}).success);
+ok('media: a master url that does not derive from its own pathname is refused', !blogMediaSchema.safeParse({
+  variants: {
+    full: { url: `https://${PUBLIC_BLOB_HOST}/blogs/other.avif`, pathname: 'blogs/hero.avif', width: 8, height: 6 },
+  },
+  blurDataUrl: null,
+}).success);
+ok('media: a RUNG url that does not derive from its own pathname is refused', !blogMediaSchema.safeParse({
+  variants: {
+    full: { ...rung('blogs/hero.avif'), width: 8, height: 6 },
+    w640: { url: `https://${PUBLIC_BLOB_HOST}/blogs/other.avif`, pathname: 'blogs/hero-640.avif' },
+  },
+  blurDataUrl: null,
+}).success);
+ok('media: a pathname under projects/ is refused', !blogMediaSchema.safeParse({
+  variants: { full: { ...rung('projects/hero.avif'), width: 8, height: 6 } },
+  blurDataUrl: null,
+}).success);
+ok('media: a traversing pathname is refused', !blogMediaSchema.safeParse({
+  variants: { full: { ...rung('blogs/../projects/hero.avif'), width: 8, height: 6 } },
+  blurDataUrl: null,
+}).success);
+ok('media: a bad blur data url is refused', !blogMediaSchema.safeParse({
+  variants: { full: { ...rung('blogs/hero.avif'), width: 8, height: 6 } },
+  blurDataUrl: 'data:text/html,x',
+}).success);
+ok('media: an unknown key is refused', !blogMediaSchema.safeParse({
+  variants: { full: { ...rung('blogs/hero.avif'), width: 8, height: 6 } },
+  blurDataUrl: null,
+  alt: 'x',
+}).success);
+// The same door reaches the post schemas, on both image slots.
+draftTakes('an uploaded OG image', { ogImageMedia: MEDIA });
+draftRefuses('an OG image on another blob tenant', {
+  ogImageMedia: {
+    variants: { full: { ...rung('blogs/og.avif', 'other.public.blob.vercel-storage.com'), width: 8, height: 6 } },
+    blurDataUrl: null,
+  },
+});
+
+// ---- 6. robotsExtra is a TYPED vocabulary, not free text -------------------
+// Built from blogFields.ts's keys and kinds, so a key added to the leaf gets a
+// validator for free. This is the assertion that proves it is derived.
+eq(
+  'the robots schema offers exactly the leaf vocabulary',
+  Object.keys(blogRobotsExtraSchema.shape).sort(),
+  [...ROBOTS_EXTRA_KEYS].sort(),
+);
+const EVERY_DIRECTIVE = {
+  'max-snippet': -1,
+  'max-video-preview': 0,
+  'max-image-preview': 'large',
+  noarchive: true,
+  nosnippet: false,
+  noimageindex: true,
+  notranslate: false,
+  unavailable_after: '2026-12-31T23:59:59Z',
+};
+ok('robots: every allowed key with a well-typed value', blogRobotsExtraSchema.safeParse(EVERY_DIRECTIVE).success);
+ok('robots: an empty object', blogRobotsExtraSchema.safeParse({}).success);
+draftTakes('every robots directive at once', { robotsExtra: EVERY_DIRECTIVE });
+draftTakes('a null robotsExtra', { robotsExtra: null });
+publishTakes('a null robotsExtra', { robotsExtra: null });
+ok('robots: an unknown key is refused', !blogRobotsExtraSchema.safeParse({ nocache: true }).success);
+draftRefuses('an unknown robots key', { robotsExtra: { nocache: true } });
+// THE comma rule. Next joins resolved entries with ', ', so a string value
+// carrying one injects a SECOND directive into the meta tag.
+ok('robots: a comma-injecting max-snippet is refused', !blogRobotsExtraSchema.safeParse({ 'max-snippet': '-1, noindex' }).success);
+ok('robots: a numeric max-snippet as a string is refused', !blogRobotsExtraSchema.safeParse({ 'max-snippet': '-1' }).success);
+// new Date() parses "December 17, 1995", so the comma has to be refused by
+// name and not left to the date parser.
+ok('robots: a parseable date CARRYING a comma is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: 'December 17, 1995 03:24:00' }).success);
+// A trailing control character makes the date unparseable, but a LEADING one
+// is skipped as whitespace and parses, so the control guard is load-bearing.
+ok('robots: a leading control character in unavailable_after is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: `${String.fromCharCode(1)}2026-12-31` }).success);
+ok('robots: an unparseable unavailable_after is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: 'nope' }).success);
+ok('robots: an over-long unavailable_after is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: `2026-12-31T23:59:59Z${' '.repeat(64)}` }).success);
+ok('robots: max-image-preview outside its three values is refused', !blogRobotsExtraSchema.safeParse({ 'max-image-preview': 'huge' }).success);
+for (const value of ROBOTS_PREVIEW_VALUES) {
+  ok(`robots: max-image-preview accepts "${value}"`, blogRobotsExtraSchema.safeParse({ 'max-image-preview': value }).success);
+}
+ok('robots: -1 is allowed (Google documents it as no limit)', blogRobotsExtraSchema.safeParse({ 'max-snippet': -1 }).success);
+ok('robots: -2 is refused', !blogRobotsExtraSchema.safeParse({ 'max-snippet': -2 }).success);
+ok('robots: a fractional max-video-preview is refused', !blogRobotsExtraSchema.safeParse({ 'max-video-preview': 1.5 }).success);
+ok('robots: an absurd max-video-preview is refused', !blogRobotsExtraSchema.safeParse({ 'max-video-preview': 10_001 }).success);
+ok('robots: a string in a boolean flag is refused', !blogRobotsExtraSchema.safeParse({ noarchive: 'true' }).success);
+
+// ---- 7. customSchema is preserved by ABSENCE -------------------------------
+// It is a step-4 field kept safe by never being named in a payload or a
+// `.set()`. `.strict()` refusing it is the mechanism, so this is the guard on
+// somebody adding it back "for completeness".
+ok('draft refuses customSchema as an unknown key', !blogDraftSchema.safeParse({ ...POST, customSchema: { '@type': 'FAQPage' } }).success);
+ok('publish refuses customSchema as an unknown key', !blogPublishSchema.safeParse({ ...POST, customSchema: { '@type': 'FAQPage' } }).success);
+ok('the importer door refuses it too', !blogPostFieldsSchema.safeParse({ customSchema: null }).success);
+
+// ---- 8. Canonical trailing paragraphs --------------------------------------
+// TrailingNode (task 15) appends an empty paragraph whenever the last child is
+// not a paragraph. Without this, opening a legacy post that ends in a figure
+// and fixing a typo would append <p></p>, move contentFingerprint and grow the
+// rendering-parity allowlist.
+const para = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+const EMPTY = { type: 'paragraph' };
+const FIGURE = {
+  type: 'figure',
+  attrs: { image: { type: 'static', src: HERO_PATH }, alt: 'a', caption: null, credit: null, size: 'default', width: null, height: null, priority: false },
+};
+const asDoc = (...content: unknown[]) => ({ type: 'doc', content }) as BlogDoc;
+
+eq('strip: one trailing empty paragraph goes',
+  stripTrailingEmptyParagraphs(asDoc(para('a'), EMPTY)),
+  { type: 'doc', content: [para('a')] });
+eq('strip: several trailing empty paragraphs go',
+  stripTrailingEmptyParagraphs(asDoc(para('a'), EMPTY, { type: 'paragraph', content: [] }, EMPTY)),
+  { type: 'doc', content: [para('a')] });
+eq('strip: an INTERIOR empty paragraph is left alone',
+  stripTrailingEmptyParagraphs(asDoc(para('a'), EMPTY, para('b'))),
+  { type: 'doc', content: [para('a'), EMPTY, para('b')] });
+// The doc's content expression is `block+`, so emptying it would produce a doc
+// that is no longer a valid document at all.
+eq('strip: a doc of a single empty paragraph keeps it',
+  stripTrailingEmptyParagraphs(asDoc(EMPTY)),
+  { type: 'doc', content: [EMPTY] });
+eq('strip: a doc of nothing but empty paragraphs keeps exactly one',
+  stripTrailingEmptyParagraphs(asDoc(EMPTY, EMPTY, EMPTY)),
+  { type: 'doc', content: [EMPTY] });
+eq('strip: a doc with no trailing empty paragraph is returned untouched',
+  stripTrailingEmptyParagraphs(asDoc(para('a'), para('b'))),
+  { type: 'doc', content: [para('a'), para('b')] });
+
+// The exact TrailingNode case, through the REAL validator: a doc ending in a
+// figure plus the appended empty paragraph must canonicalise to the same value
+// as the same doc without it.
+const withTrailer = validateBlogBody(asDoc(para('a'), FIGURE, EMPTY));
+const without = validateBlogBody(asDoc(para('a'), FIGURE));
+ok('validate: both TrailingNode docs are valid', withTrailer.ok && without.ok);
+eq(
+  'validate: a figure-ending doc canonicalises the same with or without the appended paragraph',
+  withTrailer.ok ? JSON.stringify(withTrailer.doc) : 'invalid',
+  without.ok ? JSON.stringify(without.doc) : 'invalid',
+);
+// And the canonical result still re-validates to itself, which is the property
+// every stored body depends on.
+const again = withTrailer.ok ? validateBlogBody(withTrailer.doc) : null;
+eq(
+  'validate: the canonical result re-validates unchanged',
+  again?.ok ? JSON.stringify(again.doc) : 'invalid',
+  withTrailer.ok ? JSON.stringify(withTrailer.doc) : 'invalid',
+);
+// A blank doc must still come back as a doc rather than being emptied.
+const blankDoc = validateBlogBody(asDoc(EMPTY));
+eq('validate: a blank doc stays a one-paragraph doc', blankDoc.ok ? blankDoc.doc.content?.length : null, 1);
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

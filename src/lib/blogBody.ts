@@ -244,15 +244,33 @@ const variantsSchema = z
   })
   .strict();
 
+/**
+ * A whole uploaded image: the `BlogMedia` value in src/db/schema.ts.
+ *
+ * A SECURITY PREDICATE wearing a formatter's clothes, and the reason is in
+ * publicBlobFields.ts's header: `*.public.blob.vercel-storage.com` matches
+ * every Vercel tenant, and next/image never consults `remotePatterns` when a
+ * custom loader is in play. `rungSchema`'s `url === publicBlobUrl(pathname)`
+ * refinement is therefore the only thing between an editor-typed URL and an
+ * anonymous visitor's <img src>. Never loosen it, and never let a caller pass
+ * a `url` that is not derived from its own `pathname`.
+ *
+ * It exists as its own export because a figure node is not the only image on
+ * a post: the hero, the OG image and (task 11) an author photo are all
+ * BlogMedia values that reach no `figure` node, so until this they had no
+ * validator at all. The `media` branch below is built from its shape rather
+ * than restating it, so the figure door and the hero door cannot drift.
+ */
+export const blogMediaSchema = z
+  .object({
+    variants: variantsSchema,
+    blurDataUrl: z.string().regex(BLUR_DATA_URL_RE).nullable(),
+  })
+  .strict();
+
 const imageSourceSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('static'), src: z.string().regex(STATIC_IMAGE_PATH_RE, 'not a /images path') }).strict(),
-  z
-    .object({
-      type: z.literal('media'),
-      variants: variantsSchema,
-      blurDataUrl: z.string().regex(BLUR_DATA_URL_RE).nullable(),
-    })
-    .strict(),
+  z.object({ type: z.literal('media'), ...blogMediaSchema.shape }).strict(),
 ]);
 
 const int = (min: number, max: number) => z.number().int().min(min).max(max);
@@ -427,6 +445,54 @@ export type BlogDoc = JSONContent & { type: 'doc' };
 
 export type BlogValidation = { ok: true; doc: BlogDoc } | { ok: false; problems: string[] };
 
+/** A `paragraph` carrying nothing. `Node.toJSON()` OMITS `content` on an
+ *  empty node, so `{ type: 'paragraph' }` is the canonical spelling and
+ *  `content: []` is the raw-input one; both count. Private on purpose: the
+ *  two questions anybody asks about an empty paragraph are answered by the
+ *  two functions below, and a third spelling of "empty paragraph" elsewhere
+ *  would be the thing that drifts. */
+function isEmptyParagraph(node: unknown): boolean {
+  if (!node || typeof node !== 'object') return false;
+  const n = node as { type?: unknown; content?: unknown };
+  if (n.type !== 'paragraph') return false;
+  return !Array.isArray(n.content) || n.content.length === 0;
+}
+
+/**
+ * Drop empty paragraphs from the END of a doc's top-level content.
+ *
+ * `TrailingNode` (task 15) appends an empty paragraph whenever the document's
+ * last child is not a paragraph, and the zod layer accepts an empty
+ * paragraph. So without this, opening a legacy post that ends in a figure, a
+ * table or a howTo and fixing one typo would silently append `<p></p>` to the
+ * stored body, move `contentFingerprint` (and with it the "Updated" byline,
+ * the sitemap lastmod and JSON-LD dateModified) and grow the rendering-parity
+ * allowlist. Canonicalising inside the ONE validator is what keeps the
+ * editor, the importer and the check scripts on the same stored form.
+ *
+ * AT LEAST ONE NODE ALWAYS SURVIVES: the doc's content expression is
+ * `block+`, so a doc emptied completely would no longer be a valid document
+ * at all. A post whose whole body is one empty paragraph is a blank article,
+ * which is `bodyIsBlank`'s question and the publish door's refusal, not this
+ * function's business.
+ */
+export function stripTrailingEmptyParagraphs(doc: BlogDoc): BlogDoc {
+  const content = doc.content;
+  if (!Array.isArray(content)) return doc;
+  let end = content.length;
+  while (end > 1 && isEmptyParagraph(content[end - 1])) end--;
+  return end === content.length ? doc : { ...doc, content: content.slice(0, end) };
+}
+
+/** Nothing but empty paragraphs (or nothing at all): a blank article. The
+ *  publish door in blogPostSchema.ts refuses one, which is a refusal a
+ *  per-field schema cannot make. Deliberately permissive about its argument
+ *  so a schema's own inferred body type can be passed straight in. */
+export function bodyIsBlank(doc: { content?: readonly unknown[] } | null | undefined): boolean {
+  if (!doc || !Array.isArray(doc.content)) return true;
+  return doc.content.every(isEmptyParagraph);
+}
+
 export function validateBlogBody(raw: unknown): BlogValidation {
   let serialized: string;
   try {
@@ -451,7 +517,7 @@ export function validateBlogBody(raw: unknown): BlogValidation {
   } catch (error) {
     return { ok: false, problems: [error instanceof Error ? error.message : String(error)] };
   }
-  return { ok: true, doc: pm.toJSON() as BlogDoc };
+  return { ok: true, doc: stripTrailingEmptyParagraphs(pm.toJSON() as BlogDoc) };
 }
 
 /** A checked doc as a ProseMirror node, for the renderer. */
