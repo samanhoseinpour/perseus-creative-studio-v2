@@ -1,6 +1,3 @@
-import path from 'path';
-import fs from 'fs/promises';
-import matter from 'gray-matter';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
@@ -37,15 +34,11 @@ import {
   Breadcrumb,
   type Crumb,
 } from '@/components';
-import {
-  BLOG_AUTHORS,
-  blogPosts,
-  type BlogAuthor,
-  type BlogPost,
-} from '@/constants/blogs';
+import { listAuthorsWithPosts, listPublishedSummaries, type PublicAuthor, type PublicPostSummary } from '@/lib/blogStore';
 import { SITE_URL, OG_IMAGE, PERSEUS_LOGO } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
-import { countWords, readingMinutes } from '@/utils/extractHeadings';
+import { readingMinutes } from '@/utils/extractHeadings';
+import { authorImageUrl, serializeJsonLd } from '@/lib/blogJsonLd';
 
 const FALLBACK_OG_IMAGE = OG_IMAGE;
 const OG_WIDTH = 1200;
@@ -100,14 +93,14 @@ type CadenceBucket = {
   count: number;
 };
 
-function buildCadenceBuckets(posts: BlogPost[]): {
+function buildCadenceBuckets(posts: PublicPostSummary[]): {
   mode: 'monthly' | 'yearly';
   buckets: CadenceBucket[];
 } {
   if (!posts.length) return { mode: 'monthly', buckets: [] };
 
   const dates = posts
-    .map((p) => new Date(`${p.datetime}T00:00:00Z`))
+    .map((p) => new Date(`${p.publishedDay}T00:00:00Z`))
     .filter((d) => !Number.isNaN(d.getTime()));
   if (!dates.length) return { mode: 'monthly', buckets: [] };
 
@@ -143,7 +136,7 @@ function buildCadenceBuckets(posts: BlogPost[]): {
       });
     }
     for (const p of posts) {
-      const d = new Date(`${p.datetime}T00:00:00Z`);
+      const d = new Date(`${p.publishedDay}T00:00:00Z`);
       if (Number.isNaN(d.getTime())) continue;
       const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(
         2,
@@ -165,7 +158,7 @@ function buildCadenceBuckets(posts: BlogPost[]): {
     });
   }
   for (const p of posts) {
-    const d = new Date(`${p.datetime}T00:00:00Z`);
+    const d = new Date(`${p.publishedDay}T00:00:00Z`);
     if (Number.isNaN(d.getTime())) continue;
     const b = buckets.find((bk) => bk.key === String(d.getUTCFullYear()));
     if (b) b.count += 1;
@@ -173,29 +166,9 @@ function buildCadenceBuckets(posts: BlogPost[]): {
   return { mode: 'yearly', buckets };
 }
 
-// Same comparator as the /blogs hub and authors/[author]: newest first with
-// `id` as the tiebreak, so same-day posts order identically everywhere. (The
-// previous `a < b ? 1 : -1` returned -1 for EQUAL datetimes — an inconsistent
-// comparator, so tie order was engine-dependent and could drift from the
-// other surfaces; three posts share the newest date in the archive.)
-function byNewestPost(a: BlogPost, b: BlogPost): number {
-  const at = Date.parse(a.datetime);
-  const bt = Date.parse(b.datetime);
-  const aTime = Number.isFinite(at) ? at : 0;
-  const bTime = Number.isFinite(bt) ? bt : 0;
-  if (bTime !== aTime) return bTime - aTime;
-  return b.id - a.id;
-}
-
-function authorPostsFor(author: BlogAuthor) {
-  return blogPosts
-    .filter((p) => p.authorSlug === author.slug)
-    .sort(byNewestPost);
-}
-
 type TopicCount = { title: string; slug: string; count: number };
 
-function topicsFor(posts: BlogPost[]): TopicCount[] {
+function topicsFor(posts: PublicPostSummary[]): TopicCount[] {
   const map = new Map<string, TopicCount>();
   for (const p of posts) {
     const existing = map.get(p.category.slug);
@@ -212,45 +185,20 @@ function topicsFor(posts: BlogPost[]): TopicCount[] {
 
 type PostWordCount = { slug: string; words: number };
 
-async function wordCountsFor(posts: BlogPost[]): Promise<PostWordCount[]> {
-  if (!posts.length) return [];
-  return Promise.all(
-    posts.map(async (p) => {
-      try {
-        const filePath = path.join(
-          process.cwd(),
-          'src',
-          'content',
-          'blogs',
-          p.category.slug,
-          `${p.slug}.mdx`,
-        );
-        const raw = await fs.readFile(filePath, 'utf8');
-        const { content } = matter(raw);
-        return { slug: p.slug, words: countWords(content) };
-      } catch {
-        return { slug: p.slug, words: 0 };
-      }
-    }),
-  );
-}
-
 type AuthorSummary = {
-  author: BlogAuthor;
-  posts: BlogPost[];
+  author: PublicAuthor;
+  posts: PublicPostSummary[];
   topics: TopicCount[];
   topTopic: TopicCount | null;
-  latestPost: BlogPost | null;
-  earliestPost: BlogPost | null;
+  latestPost: PublicPostSummary | null;
+  earliestPost: PublicPostSummary | null;
   perPost: PostWordCount[];
   totalWords: number;
 };
 
-async function buildAuthorSummary(author: BlogAuthor): Promise<AuthorSummary> {
-  const posts = authorPostsFor(author);
+function buildAuthorSummary(author: PublicAuthor, posts: PublicPostSummary[]): AuthorSummary {
   const topics = topicsFor(posts);
-  const perPost = await wordCountsFor(posts);
-  const totalWords = perPost.reduce((sum, w) => sum + w.words, 0);
+  const perPost = posts.map((p) => ({ slug: p.slug, words: p.wordCount }));
   return {
     author,
     posts,
@@ -259,7 +207,7 @@ async function buildAuthorSummary(author: BlogAuthor): Promise<AuthorSummary> {
     latestPost: posts[0] ?? null,
     earliestPost: posts.length > 0 ? posts[posts.length - 1] : null,
     perPost,
-    totalWords,
+    totalWords: perPost.reduce((sum, w) => sum + w.words, 0),
   };
 }
 
@@ -309,15 +257,14 @@ export const metadata: Metadata = {
 };
 
 export default async function AuthorsIndexPage() {
-  // Promote the agency author first, then individuals, preserving the order
-  // declared in BLOG_AUTHORS.
-  const orderedAuthors = Object.values(BLOG_AUTHORS).sort((a, b) => {
-    if (a.slug === 'perseus-creative-studio') return -1;
-    if (b.slug === 'perseus-creative-studio') return 1;
-    return 0;
-  });
-
-  const summaries = await Promise.all(orderedAuthors.map(buildAuthorSummary));
+  const withPosts = await listAuthorsWithPosts();
+  // The store already puts the agency author first (sort_index 0); the sort
+  // is kept as belt and braces for the same promotion the old page made.
+  const summaries = [...withPosts]
+    .sort((a, b) => (a.author.slug === 'perseus-creative-studio' ? -1 : b.author.slug === 'perseus-creative-studio' ? 1 : 0))
+    .map(({ author, posts }) => buildAuthorSummary(author, posts));
+  // Site order, not a re-sort: the snapshot is already newest-first.
+  const allPosts = await listPublishedSummaries();
 
   const totalArticles = summaries.reduce((sum, s) => sum + s.posts.length, 0);
   const totalWords = summaries.reduce((sum, s) => sum + s.totalWords, 0);
@@ -326,10 +273,9 @@ export default async function AuthorsIndexPage() {
     for (const t of s.topics) allTopics.add(t.slug);
   }
 
-  // Cross-team data: flatten posts across authors, aggregate topic counts,
-  // find newest/oldest, build a team-wide cadence chart, and attach each post
-  // to its author for attribution.
-  const allPosts = summaries.flatMap((s) => s.posts).sort(byNewestPost);
+  // Cross-team data: aggregate topic counts, find newest/oldest, build a
+  // team-wide cadence chart, and attach each post to its author for
+  // attribution.
   const teamTopics = topicsFor(allPosts);
   const teamCadence = buildCadenceBuckets(allPosts);
   const teamCadenceMax = Math.max(
@@ -432,7 +378,7 @@ export default async function AuthorsIndexPage() {
         0,
         Math.floor(
           (Date.now() -
-            new Date(`${teamLatest.datetime}T00:00:00Z`).getTime()) /
+            new Date(`${teamLatest.publishedDay}T00:00:00Z`).getTime()) /
             86_400_000,
         ),
       )
@@ -440,7 +386,7 @@ export default async function AuthorsIndexPage() {
   let avgGapDays = 0;
   if (allPosts.length >= 2) {
     const sortedTimes = allPosts
-      .map((p) => new Date(`${p.datetime}T00:00:00Z`).getTime())
+      .map((p) => new Date(`${p.publishedDay}T00:00:00Z`).getTime())
       .filter((t) => !Number.isNaN(t))
       .sort((a, b) => a - b);
     let totalGap = 0;
@@ -460,7 +406,7 @@ export default async function AuthorsIndexPage() {
         id="ld-json-authors-index"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             '@context': 'https://schema.org',
             '@graph': [
               buildBreadcrumbList(AUTHORS_CRUMBS, CANONICAL),
@@ -478,7 +424,7 @@ export default async function AuthorsIndexPage() {
                   jobTitle: s.author.role,
                   description: s.author.bio,
                   url: `${SITE_URL}${s.author.href}`,
-                  image: `${SITE_URL}${s.author.imageUrl}`,
+                  image: authorImageUrl(s.author),
                   sameAs: s.author.sameAs,
                 })),
                 mainEntity: {
@@ -609,9 +555,9 @@ export default async function AuthorsIndexPage() {
                             aria-hidden="true"
                           />
                           {latestPost
-                            ? formatMonthYear(latestPost.datetime)
+                            ? formatMonthYear(latestPost.publishedDay)
                             : earliestPost
-                              ? formatMonthYear(earliestPost.datetime)
+                              ? formatMonthYear(earliestPost.publishedDay)
                               : '—'}
                         </dd>
                       </div>
@@ -793,7 +739,7 @@ export default async function AuthorsIndexPage() {
                   First published
                 </p>
                 <p className="mt-0.5 text-lg leading-lg font-semibold text-black">
-                  {teamEarliest ? formatMonthYear(teamEarliest.datetime) : '—'}
+                  {teamEarliest ? formatMonthYear(teamEarliest.publishedDay) : '—'}
                 </p>
               </div>
             </li>
@@ -807,7 +753,7 @@ export default async function AuthorsIndexPage() {
                   Last published
                 </p>
                 <p className="mt-0.5 text-lg leading-lg font-semibold text-black">
-                  {teamLatest ? formatMonthYear(teamLatest.datetime) : '—'}
+                  {teamLatest ? formatMonthYear(teamLatest.publishedDay) : '—'}
                 </p>
               </div>
             </li>
@@ -903,7 +849,7 @@ export default async function AuthorsIndexPage() {
                       className="h-3 w-3 opacity-60"
                       aria-hidden="true"
                     />
-                    <time dateTime={teamLatest.datetime}>
+                    <time dateTime={teamLatest.publishedDay}>
                       {teamLatest.date}
                     </time>
                   </span>
@@ -1438,7 +1384,7 @@ export default async function AuthorsIndexPage() {
                               className="h-3 w-3 opacity-60"
                               aria-hidden="true"
                             />
-                            <time dateTime={post.datetime}>{post.date}</time>
+                            <time dateTime={post.publishedDay}>{post.date}</time>
                           </span>
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-2 py-0.5 text-black">
                             <Tag

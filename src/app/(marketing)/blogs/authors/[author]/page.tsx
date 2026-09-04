@@ -1,6 +1,3 @@
-import path from 'path';
-import fs from 'fs/promises';
-import matter from 'gray-matter';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -77,19 +74,14 @@ import {
   PaginationScroll,
   type Crumb,
 } from '@/components';
-import {
-  BLOG_AUTHORS,
-  blogPosts,
-  AUTHOR_PAGE_SIZE,
-  getBlogAuthor,
-  type BlogAuthor,
-  type BlogPost,
-} from '@/constants/blogs';
+import { AUTHOR_PAGE_SIZE } from '@/constants/blogPagination';
+import { getAuthor, listAuthors, listPublishedSummaries, type PublicAuthor, type PublicPostSummary } from '@/lib/blogStore';
 import { SITE_URL, OG_IMAGE, PERSEUS_LOGO } from '@/constants';
 import { resolveImageUrl } from '@/utils/images';
 import { CATEGORIES } from '@/constants/services';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
-import { countWords, readingMinutes } from '@/utils/extractHeadings';
+import { readingMinutes } from '@/utils/extractHeadings';
+import { authorImageUrl, serializeJsonLd } from '@/lib/blogJsonLd';
 import { firstParam, getPageNumbers, parsePage } from '@/utils/pagination';
 
 const FALLBACK_OG_IMAGE = OG_IMAGE;
@@ -114,7 +106,7 @@ function resolveSocial(url: string) {
 
 // Brief, human-readable explanations for each `knowsAbout` entry, surfaced on
 // the individual-author "What X knows about" specialty cards. Keyed by the
-// exact skill string declared in BLOG_AUTHORS. Entries without a match fall
+// exact skill string on the author's `knowsAbout`. Entries without a match fall
 // back to omitting the description line.
 const SKILL_DESCRIPTIONS: Record<string, string> = {
   // Engineering (Saman)
@@ -229,29 +221,18 @@ const SERVICE_ICONS: Record<string, IconType> = {
   branding: Gem,
 };
 
-function authorOgImage(author: BlogAuthor): string {
+function authorOgImage(author: PublicAuthor): string {
   if (!author.ogImage) return FALLBACK_OG_IMAGE;
   return resolveImageUrl(author.ogImage);
 }
 
-function authorPostsFor(author: BlogAuthor) {
-  // Same comparator as the hub/prev-next sorts: newest first, `id` as the
-  // tiebreak so same-day posts order identically everywhere. (The previous
-  // `a < b ? 1 : -1` returned -1 for equal datetimes — an inconsistent
-  // comparator, and unordered ties could drift from the other surfaces.)
-  return blogPosts
-    .filter((p) => p.authorSlug === author.slug)
-    .sort((a, b) => {
-      const at = Date.parse(a.datetime);
-      const bt = Date.parse(b.datetime);
-      const aTime = Number.isFinite(at) ? at : 0;
-      const bTime = Number.isFinite(bt) ? bt : 0;
-      if (bTime !== aTime) return bTime - aTime;
-      return b.id - a.id;
-    });
+// The snapshot is already in the one public order (newest first, `id` as the
+// tiebreak), so filtering it preserves that order for every surface.
+async function authorPostsFor(author: PublicAuthor): Promise<PublicPostSummary[]> {
+  return (await listPublishedSummaries()).filter((p) => p.authorSlug === author.slug);
 }
 
-function uniqueCategories(posts: BlogPost[]) {
+function uniqueCategories(posts: PublicPostSummary[]) {
   const map = new Map<string, { title: string; slug: string; count: number }>();
   for (const p of posts) {
     const existing = map.get(p.category.slug);
@@ -273,14 +254,14 @@ type CadenceBucket = {
   count: number;
 };
 
-function buildCadenceBuckets(posts: BlogPost[]): {
+function buildCadenceBuckets(posts: PublicPostSummary[]): {
   mode: 'monthly' | 'yearly';
   buckets: CadenceBucket[];
 } {
   if (!posts.length) return { mode: 'monthly', buckets: [] };
 
   const dates = posts
-    .map((p) => new Date(`${p.datetime}T00:00:00Z`))
+    .map((p) => new Date(`${p.publishedDay}T00:00:00Z`))
     .filter((d) => !Number.isNaN(d.getTime()));
   if (!dates.length) return { mode: 'monthly', buckets: [] };
 
@@ -316,7 +297,7 @@ function buildCadenceBuckets(posts: BlogPost[]): {
       });
     }
     for (const p of posts) {
-      const d = new Date(`${p.datetime}T00:00:00Z`);
+      const d = new Date(`${p.publishedDay}T00:00:00Z`);
       if (Number.isNaN(d.getTime())) continue;
       const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(
         2,
@@ -338,7 +319,7 @@ function buildCadenceBuckets(posts: BlogPost[]): {
     });
   }
   for (const p of posts) {
-    const d = new Date(`${p.datetime}T00:00:00Z`);
+    const d = new Date(`${p.publishedDay}T00:00:00Z`);
     if (Number.isNaN(d.getTime())) continue;
     const b = buckets.find((bk) => bk.key === String(d.getUTCFullYear()));
     if (b) b.count += 1;
@@ -348,26 +329,8 @@ function buildCadenceBuckets(posts: BlogPost[]): {
 
 type PostWordCount = { slug: string; words: number };
 
-async function loadAuthorWriting(posts: BlogPost[]) {
-  const perPost: PostWordCount[] = await Promise.all(
-    posts.map(async (p) => {
-      try {
-        const filePath = path.join(
-          process.cwd(),
-          'src',
-          'content',
-          'blogs',
-          p.category.slug,
-          `${p.slug}.mdx`,
-        );
-        const raw = await fs.readFile(filePath, 'utf8');
-        const { content } = matter(raw);
-        return { slug: p.slug, words: countWords(content) };
-      } catch {
-        return { slug: p.slug, words: 0 };
-      }
-    }),
-  );
+function loadAuthorWriting(posts: PublicPostSummary[]) {
+  const perPost: PostWordCount[] = posts.map((p) => ({ slug: p.slug, words: p.wordCount }));
   const totalWords = perPost.reduce((sum, w) => sum + w.words, 0);
   const totalMinutes = totalWords > 0 ? readingMinutes(totalWords) : 0;
   const avgWords = posts.length > 0 ? Math.round(totalWords / posts.length) : 0;
@@ -392,8 +355,8 @@ function formatMonthYear(datetime: string): string {
   });
 }
 
-export function generateStaticParams() {
-  return Object.keys(BLOG_AUTHORS).map((author) => ({ author }));
+export async function generateStaticParams() {
+  return (await listAuthors()).map((a) => ({ author: a.slug }));
 }
 
 export async function generateMetadata({
@@ -404,7 +367,7 @@ export async function generateMetadata({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { author: authorSlug } = await params;
-  const author = getBlogAuthor(authorSlug);
+  const author = await getAuthor(authorSlug);
   if (!author) return { title: 'Author not found' };
 
   // Self-referencing canonical per 2026 SEO guidance. Clamp out-of-range
@@ -413,7 +376,7 @@ export async function generateMetadata({
   // the clean canonical.
   const sp = await searchParams;
   const requestedPage = parsePage(firstParam(sp?.page));
-  const authorPosts = blogPosts.filter((p) => p.authorSlug === author.slug);
+  const authorPosts = await authorPostsFor(author);
   // restPosts (posts.slice(1)) is what the More-articles section paginates.
   const restPostsCount = Math.max(0, authorPosts.length - 1);
   const maxPage = Math.max(1, Math.ceil(restPostsCount / AUTHOR_PAGE_SIZE));
@@ -521,13 +484,13 @@ export default async function AuthorPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { author: authorSlug } = await params;
-  const author = getBlogAuthor(authorSlug);
+  const author = await getAuthor(authorSlug);
   if (!author) notFound();
 
   const sp = await searchParams;
   const requestedPage = parsePage(firstParam(sp?.page));
 
-  const posts = authorPostsFor(author);
+  const posts = await authorPostsFor(author);
   const topics = uniqueCategories(posts);
   const latestPost = posts[0];
   const restPosts = posts.slice(1);
@@ -553,7 +516,7 @@ export default async function AuthorPage({
     page > 1 ? `${author.href}?page=${page}` : author.href;
   const cadence = buildCadenceBuckets(posts);
   const cadenceMax = Math.max(1, ...cadence.buckets.map((b) => b.count));
-  const writing = await loadAuthorWriting(posts);
+  const writing = loadAuthorWriting(posts);
   const canonical = `${SITE_URL}${author.href}`;
   const firstName = author.name.split(' ')[0];
 
@@ -585,7 +548,7 @@ export default async function AuthorPage({
   // Person.knowsAbout combines the explicitly-curated expertise list with
   // the topic titles the author has actually published on. Dedupe via Set.
   const knowsAbout = Array.from(
-    new Set([...(author.knowsAbout ?? []), ...topics.map((t) => t.title)]),
+    new Set([...author.knowsAbout, ...topics.map((t) => t.title)]),
   );
 
   const isAgencyAuthor = author.slug === 'perseus-creative-studio';
@@ -610,7 +573,7 @@ export default async function AuthorPage({
         href: `/services/${category.slug}`,
         Icon: SERVICE_ICONS[category.slug] as IconType | undefined,
       }))
-    : (author.knowsAbout ?? []).map((skill) => ({
+    : author.knowsAbout.map((skill) => ({
         title: skill,
         description: SKILL_DESCRIPTIONS[skill],
         href: undefined,
@@ -624,7 +587,7 @@ export default async function AuthorPage({
   // the "Browse by topic" section.
   const topicShowcase: {
     topic: (typeof topics)[number];
-    post: BlogPost;
+    post: PublicPostSummary;
   }[] = [];
   for (const topic of topics) {
     const post = posts.find((p) => p.category.slug === topic.slug);
@@ -683,7 +646,7 @@ export default async function AuthorPage({
         id="ld-json-author"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             '@context': 'https://schema.org',
             '@graph': [
               buildBreadcrumbList(crumbs, canonical),
@@ -702,7 +665,7 @@ export default async function AuthorPage({
                 jobTitle: author.role,
                 description: author.bio,
                 url: canonical,
-                image: `${SITE_URL}${author.imageUrl}`,
+                image: authorImageUrl(author),
                 sameAs: author.sameAs,
                 ...(knowsAbout.length > 0 && { knowsAbout }),
                 ...(author.location && {
@@ -900,7 +863,7 @@ export default async function AuthorPage({
                   Active since
                 </p>
                 <p className="mt-0.5 text-lg leading-lg font-semibold text-black">
-                  {earliestPost ? formatMonthYear(earliestPost.datetime) : '—'}
+                  {earliestPost ? formatMonthYear(earliestPost.publishedDay) : '—'}
                 </p>
               </div>
             </li>
@@ -914,7 +877,7 @@ export default async function AuthorPage({
                   Last published
                 </p>
                 <p className="mt-0.5 text-lg leading-lg font-semibold text-black">
-                  {latestPost ? formatMonthYear(latestPost.datetime) : '—'}
+                  {latestPost ? formatMonthYear(latestPost.publishedDay) : '—'}
                 </p>
               </div>
             </li>
@@ -1243,7 +1206,7 @@ export default async function AuthorPage({
                     {latestPost.title}
                   </p>
                   <p className="mt-1 text-xs leading-xs text-black/60">
-                    <time dateTime={latestPost.datetime}>
+                    <time dateTime={latestPost.publishedDay}>
                       {latestPost.date}
                     </time>{' '}
                     · {latestPost.category.title}
@@ -1404,7 +1367,7 @@ export default async function AuthorPage({
                             className="h-3 w-3 opacity-60"
                             aria-hidden="true"
                           />
-                          <time dateTime={post.datetime} className="text-black">
+                          <time dateTime={post.publishedDay} className="text-black">
                             {post.date}
                           </time>
                         </span>
