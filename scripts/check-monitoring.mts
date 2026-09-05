@@ -686,17 +686,37 @@ async function dbChecks() {
     await cleanup();
     const at = T('2026-08-27T12:07:00Z');
     // A scope the builder would refuse — written raw on purpose, so every row
-    // this script creates is findable by prefix and swept.
-    const row = { ...buildErrorBucketRow({ source: 'request', scope: '/admin/tasks', routeType: 'render', error: new TypeError('x'), environment: 'development', deployment: 'dpl_1', requestId: 'req-1', at }), scope: `${PREFIX}/admin/tasks` };
+    // this script creates is findable by prefix and swept. The fingerprint is
+    // then RECOMPUTED from that prefixed scope, because the builder derives it
+    // from the scope it was given: leaving the one built from '/admin/tasks'
+    // would file this fixture under the same group as a real TypeError thrown
+    // rendering that page, and the reads below would answer about both.
+    const scope = `${PREFIX}/admin/tasks`;
+    const built = buildErrorBucketRow({ source: 'request', scope: '/admin/tasks', routeType: 'render', error: new TypeError('x'), environment: 'development', deployment: 'dpl_1', requestId: 'req-1', at });
+    const row = { ...built, scope, fingerprint: fingerprintFor({ source: built.source, scope, routeType: built.routeType, errorName: built.errorName, code: built.code }) };
+    // Read by the upsert's own conflict target, never by the fingerprint alone:
+    // one group spans many buckets and both environments, so a fingerprint is
+    // not a row identity and a bare match would return rows nobody seeded.
+    const bucketRow = async () => db.select().from(schema.monitoringErrorBuckets).where(and(dEq(schema.monitoringErrorBuckets.bucketStart, row.bucketStart), dEq(schema.monitoringErrorBuckets.environment, row.environment), dEq(schema.monitoringErrorBuckets.fingerprint, row.fingerprint)));
 
     // 1. ten concurrent upserts ⇒ one row, count 10
     await Promise.all(Array.from({ length: 10 }, (_, i) => statements.upsertErrorBucket(db, { ...row, lastRequestId: `req-${i}`, lastDeployment: i === 9 ? 'dpl_2' : 'dpl_1' })));
-    const buckets = await db.select().from(schema.monitoringErrorBuckets).where(dEq(schema.monitoringErrorBuckets.fingerprint, row.fingerprint));
+    const buckets = await bucketRow();
     eq('ten concurrent upserts ⇒ one row', buckets.length, 1);
     eq('…with count 10', buckets[0]?.count, 10);
-    eq('…first deployment never overwritten', buckets[0]?.firstDeployment, 'dpl_1');
     eq('…last request id is one of the ten', /^req-\d$/.test(buckets[0]?.lastRequestId ?? ''), true);
     eq('…bucket start round-trips', buckets[0]?.bucketStart.toISOString(), '2026-08-27T12:05:00.000Z');
+    // first_deployment is what says which build a group first appeared in, so
+    // it must survive every later occurrence. Testing that needs a write that
+    // actually carries a DIFFERENT one: the ten above all send 'dpl_1', and ten
+    // writers sending one value cannot tell preservation from replacement.
+    // It is a separate sequential write because which of ten concurrent callers
+    // wins the insert is not knowable, so the value to preserve is read first.
+    const firstBuild = buckets[0]?.firstDeployment;
+    await statements.upsertErrorBucket(db, { ...row, firstDeployment: 'dpl_much_later', lastDeployment: 'dpl_much_later' });
+    const afterLater = await bucketRow();
+    eq('…first deployment never overwritten', [firstBuild, afterLater[0]?.firstDeployment], ['dpl_1', 'dpl_1']);
+    eq('…while last deployment follows the newest occurrence', afterLater[0]?.lastDeployment, 'dpl_much_later');
 
     // 2. checks upsert folds the streak in SQL
     const component = `${PREFIX}:database`;
@@ -778,15 +798,23 @@ async function dbChecks() {
     eq('sweepDaily removes only days before the cutoff', await statements.sweepDaily(db, '2026-05-01', 500), 1);
     await db.delete(schema.monitoringDaily).where(like(schema.monitoringDaily.component, `${PREFIX}%`));
 
-    // 7. retention sweeps, batched, and reports the count
+    // 7. retention sweeps, batched, and reports the count.
+    // These are the REAL delete statements and they are scoped by a date, not
+    // by the fixture prefix, so the cutoff is a literal chosen to sit between
+    // the 2026-01-01 fixtures below and the first row this app ever wrote
+    // (monitoring shipped 2026-08-27) rather than derived from `at`. The
+    // retention windows themselves are pinned in the pure section, so nothing
+    // is lost — and the counts asserted here can no longer be moved, nor real
+    // rows deleted, by whatever the table happens to hold on the day it runs.
+    const SWEEP_CUTOFF = T('2026-06-01T00:00:00Z');
     const old = { ...row, scope: `${PREFIX}/old`, bucketStart: T('2026-01-01T00:00:00Z'), fingerprint: `${row.fingerprint.slice(0, 15)}0` };
     await statements.upsertErrorBucket(db, old);
     await statements.upsertErrorBucket(db, { ...old, fingerprint: `${row.fingerprint.slice(0, 15)}1` });
-    eq('sweep deletes only rows older than the cutoff', await statements.sweepBuckets(db, bucketRetentionCutoff(at), 500), 2);
+    eq('sweep deletes only rows older than the cutoff', await statements.sweepBuckets(db, SWEEP_CUTOFF, 500), 2);
     const left = await db.select({ n: sql<number>`count(*)::int` }).from(schema.monitoringErrorBuckets).where(like(schema.monitoringErrorBuckets.scope, `${PREFIX}%`));
     eq('…the fresh row survives', left[0]?.n, 1);
     await db.update(schema.monitoringIncidents).set({ status: 'resolved', resolvedAt: T('2026-01-01T00:00:00Z') }).where(dEq(schema.monitoringIncidents.id, id));
-    eq('resolved incidents past retention are swept', await statements.sweepResolvedIncidents(db, incidentRetentionCutoff(at), 500), 1);
+    eq('resolved incidents past retention are swept', await statements.sweepResolvedIncidents(db, SWEEP_CUTOFF, 500), 1);
   } finally {
     await cleanup().catch(() => {});
     await pool.end();
