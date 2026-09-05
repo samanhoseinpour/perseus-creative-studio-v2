@@ -33,9 +33,9 @@ import { reportCronStep, runCron } from '@/lib/cronRun';
  * reddened every fifteen minutes. That is why the invalidation goes through
  * `invalidateBlogFromCron` rather than `invalidateBlog`, why the two differ
  * only in that one function, and why scripts/check-blogs.mts refuses to pass
- * while any file under src/app/api/cron/ names `updateTag` OUTSIDE A COMMENT
- * (that sweep reads comment-stripped source, which is what lets this header
- * name it seven times while the rule still bites on one line of code).
+ * while any file under src/app/api/cron/ names `updateTag` in CODE. That sweep
+ * strips comments before it looks, which is the only reason this header may
+ * name the trap at all while the rule still bites on a single line of code.
  *
  * Runs inside runCron (src/lib/cronRun.ts), which owns the CRON_SECRET check
  * before any write, the duration, and the outcome stamp on the job's

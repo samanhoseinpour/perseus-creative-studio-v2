@@ -3061,11 +3061,23 @@ eq(
     // one cron-source monitoring signal and the string for `warnings`, rather
     // than a silent swallow.
     wordHits(CRON_ROUTE_CODE, 'reportCronStep'),
+    // THE "SAYS SO" HALF, PINNED AT BOTH ENDS, because naming it was not the
+    // same as asserting it and two one-line refactors used to pass this whole
+    // check. Call `reportCronStep` but drop its return value, or leave
+    // `warnings` off the returned outcome — which tsc allows, `CronOutcome`'s
+    // `warnings` being optional — and `runCron` computes `detail =
+    // outcome.summary` with no "N steps failed" suffix. The monitoring_checks
+    // row then reads a clean "Published 3 scheduled posts" over an
+    // announcement that failed. stdout and the error bucket still fire, so it
+    // is not silence; it is silence on precisely the operator-facing channel
+    // this guard is named for.
+    /warnings\.push\(\s*reportCronStep\(/.test(CRON_ROUTE_CODE),
+    /return \{[\s\S]*?\bwarnings,[\s\S]*?\};/.test(CRON_ROUTE_CODE),
     // And the activity row is OUTSIDE the try, because "N posts published" is
     // true whether or not the announcement worked.
     CRON_ROUTE_CODE.indexOf('logSystemActivity(') > CRON_ROUTE_CODE.indexOf('invalidateBlogCoarseFromCron();'),
   ],
-  [true, true, 2, true],
+  [true, true, 2, true, true, true],
 );
 
 // The previous ref is `hiddenRef` and NOT nothing: a scheduled post is not

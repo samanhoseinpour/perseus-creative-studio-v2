@@ -58,9 +58,20 @@ import { pingIndexNow } from '@/lib/indexnow';
  * `areTagsStale` is true, which is stale-while-revalidate — the first read
  * after the cron is served the PRE-PUBLISH snapshot, on `/blogs` above all,
  * which reads searchParams and renders per request. `{ expire: 0 }` writes
- * `expired = now`, which is byte-for-byte what `updateTag` does. Verified by
- * running Next's own handler: updateTag ⇒ expired=true; 'max' ⇒ expired=false,
- * stale=true; { expire: 0 } ⇒ expired=true.
+ * `expired = now`, which is byte-for-byte what `updateTag` does; Next groups
+ * the two itself, in `revalidate.js`'s `if (!profile || cacheLife?.expire === 0)`.
+ * Verified by running Next's own handler against an entry a minute old:
+ * updateTag ⇒ expired=true; 'max' ⇒ expired=false, stale=true;
+ * { expire: 0 } ⇒ expired=true.
+ *
+ * THE EXACT LITERAL IS PINNED, AND `'max'` IS NOT THE ONLY REASON.
+ * `CacheLifeConfig` is `{ expire?: number }`, so `revalidateTag(tag, {})`
+ * type-checks — and the handler assigns `expired` only when
+ * `durations.expire !== undefined`, so an empty object sets no expiry AT ALL
+ * and `areTagsExpired` is false for ever. That is worse than `'max'`, which at
+ * least lapses in a year, and no type would catch it. Hence
+ * scripts/check-blogs.mts pins this spelling rather than merely refusing the
+ * one wrong string.
  *
  * `revalidatePath` has no such restriction and is shared by both doors as is.
  */
