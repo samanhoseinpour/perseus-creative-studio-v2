@@ -513,7 +513,6 @@ export type BlogSnapshotView = {
  * equality across exactly that round trip: an unsorted stringify reports a
  * change that never happened, on an arbitrary subset of saves, which would
  * move every "Updated" byline and ping IndexNow for nothing.
- *
  */
 function sortKeys(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortKeys);

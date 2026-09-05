@@ -39,7 +39,6 @@ import {
   BLOG_SLUG_MAX,
   blogAuthorFieldsSchema,
   blogCategoryFieldsSchema,
-  blogPostFieldsSchema,
   blogSlugSchema,
   canonicalOverrideSchema,
 } from '@/lib/blogPostSchema';
@@ -324,10 +323,13 @@ eq('countTokens is whitespace tokens', countTokens('a  b\nc'), 3);
 eq('wordCount adds the FAQ prose', wordCount({ doc: fixture, faqs: [{ question: 'Why?', answer: 'Because so.' }] }), countTokens(txt) + 3);
 const vs = videos(fixture);
 eq('videos dedupe first-wins with the nearest heading', vs.map((v) => `${v.id}:${v.title}`), ['dQw4w9WgXcQ:Intro']);
-// An ordinary embed carries NO flag, never `false`: that is the shape the
-// legacy extractVideos returns, and the importer's parity gate compares the
-// two through JSON.stringify, which drops an undefined key and keeps a false
-// one. The second line reads the other arm on a one-node doc, so both
+// An ordinary embed carries NO flag, never `false`. The distinction is not
+// cosmetic: `videos()` feeds VideoObject JSON-LD, and `external` is what
+// suppresses the node for a video on somebody else's channel. An absent key
+// and `external: false` are the same thing to a reader and different things
+// to JSON.stringify, so a derivation that started emitting `false` would
+// still render correctly and would silently change every stored and compared
+// snapshot. The second line reads the other arm on a one-node doc, so both
 // branches of the derivation's ternary are pinned.
 eq('videos external flag is absent, not false, on an ordinary embed', vs[0].external, undefined);
 eq('videos external flag survives on a flagged embed', videos(okDoc('external embed', doc({ type: 'youtube', attrs: { id: 'Gly3VY4zUG8', external: true } }))!)[0].external, true);
@@ -412,24 +414,9 @@ eq('canonical: fragment refused', canonicalOverrideSchema.safeParse('https://exa
 // and this schema stores the RAW string — so the guard is the schema's own,
 // not the parser's. Mutating it out turns this line red and nothing else.
 eq('canonical: control character refused', canonicalOverrideSchema.safeParse('https://example.com/a\u0001b').success, false);
-const fields = {
-  slug: 'x', title: 'T', description: 'D', categorySlug: 'production', authorSlug: 'saman-hoseinpour', serviceSlug: null,
-  heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'alt', heroCaption: null,
-  keyTakeaways: ['a'], faqs: [{ question: 'q', answer: 'a' }], sources: [{ title: 's', href: 'https://a.b/c' }],
-  entities: [{ name: 'n', sameAs: ['https://www.wikidata.org/wiki/Q1'], primary: true }], relatedSlugs: ['y'],
-  seoTitle: 'st', seoDescription: 'sd', canonicalOverride: null, ogTitle: 'ot', ogDescription: 'od',
-  twitterCard: 'summary_large_image', robotsIndex: true, robotsFollow: true, focusKeywords: ['k'], llmsInclude: true,
-};
-eq('post fields: valid record', blogPostFieldsSchema.safeParse(fields).success, true);
-eq('post fields: relative source href refused', blogPostFieldsSchema.safeParse({ ...fields, sources: [{ title: 's', href: '/blogs/x' }] }).success, false);
-eq('post fields: bad source rel refused', blogPostFieldsSchema.safeParse({ ...fields, sources: [{ title: 's', href: 'https://a.b', rel: 'me' }] }).success, false);
-eq('post fields: control char in title refused', blogPostFieldsSchema.safeParse({ ...fields, title: 'a\u0001b' }).success, false);
-eq('post fields: six takeaways refused', blogPostFieldsSchema.safeParse({ ...fields, keyTakeaways: ['1', '2', '3', '4', '5', '6'] }).success, false);
-eq('post fields: hero outside /images refused', blogPostFieldsSchema.safeParse({ ...fields, heroStaticPath: '/x.avif' }).success, false);
-eq('post fields: unknown key refused', blogPostFieldsSchema.safeParse({ ...fields, excerpt: 'x' }).success, false);
-// The author and category records are parsed by the same importer as the
-// post, so they are pinned here rather than left to Task 13: `kind` and the
-// slug shape are both closed vocabularies nothing else in the suite reads.
+// The author and category records go through their own doors in
+// _actions/blogTaxonomy.ts, and `kind` and the slug shape are both closed
+// vocabularies nothing else in the suite reads, so they are pinned here.
 const authorFields = {
   slug: 'saman-hoseinpour', name: 'Saman Hoseinpour', kind: 'person', role: 'Founder', bio: 'b',
   imageStaticPath: null, ogImageStaticPath: null, sameAs: ['https://www.linkedin.com/in/x'],
@@ -442,13 +429,23 @@ eq('category fields: valid record', blogCategoryFieldsSchema.safeParse(categoryF
 eq('category fields: uppercase slug refused', blogCategoryFieldsSchema.safeParse({ ...categoryFields, slug: 'Branding' }).success, false);
 
 /* ── 6. The corpus fixture ───────────────────────────────────────────── */
-// The renderer below is pinned against the corpus document: every construct
-// the blog uses, in one doc. It was produced by the MDX mapper at the cutover
-// and frozen as canonical Tiptap JSON when that mapper was retired, so the
-// renderer assertions kept the exact document they were written against.
-// Re-validating it on every run is not ceremony: it is what stops the fixture
-// drifting out of the closed vocabulary, which would leave the renderer pinned
-// against a document the store could never hold.
+// The renderer below is pinned against the corpus document. It was produced by
+// the MDX mapper at the cutover and frozen as canonical Tiptap JSON when that
+// mapper was retired, so the renderer assertions kept the exact document they
+// were written against. Re-validating it on every run is not ceremony: it is
+// what stops the fixture drifting out of the closed vocabulary, which would
+// leave the renderer pinned against a document the store could never hold.
+//
+// WHAT IT DOES NOT COVER, and what extending it now costs. Three things are in
+// the schema and mapped by articleMapping.ts but appear nowhere in this
+// document, so no rendered output is asserted for them: the `horizontalRule`
+// node and the `strike` and `underline` marks. That is not a regression, and
+// it is worth knowing why: the MDX corpus could not express any of the three,
+// so the gap predates the freeze. The editor CAN produce all three. Closing it
+// used to mean adding a line to an .mdx file and re-running the mapper; it now
+// means hand-editing canonical Tiptap JSON, which must stay the exact
+// `toJSON()` form or the fixed-point assertion below goes red. Add the node,
+// run this script, and let the validator tell you whether you got it right.
 const validated = validateBlogBody(JSON.parse(readFileSync('scripts/blog-fixtures/corpus.json', 'utf8')));
 eq('corpus fixture validates against the closed vocabulary', validated.ok, true);
 if (!validated.ok) console.log(validated.problems);

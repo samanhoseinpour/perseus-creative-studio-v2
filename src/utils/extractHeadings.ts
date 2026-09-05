@@ -1,3 +1,27 @@
+/**
+ * Heading, slug and reading-time derivation, plus the regex extractors that
+ * read a raw MDX string.
+ *
+ * THE MDX HALF IS DEAD CODE AND IS KEPT DELIBERATELY. The corpus those
+ * extractors read was retired when /admin/blogs shipped; `blogBody.ts` now
+ * derives the same facts by walking the Tiptap doc. Exactly this much has
+ * zero callers anywhere in `src/` or `scripts/`:
+ *
+ *   functions  slugifyHeading, extractVideos, extractImages, extractFaqs,
+ *              stripFaqSection, extractHowTos
+ *   types      Faq, HowToStepData
+ *
+ * Two more survive only because `scripts/check-blog-body.mts` imports them,
+ * not because any `src/` module does: `countWords`, which is the documented
+ * meaning of the 38 imported rows' stored `word_count` and is pinned against
+ * `blogBody.ts`'s newer formula, and `extractHeadings`, which the same script
+ * uses as the independent oracle for `headings()`. Delete either and the
+ * derivation loses the only thing it is checked against.
+ *
+ * What `src/` really uses: readingMinutes, readingTimeIso, deriveStepIds,
+ * makeSlugDeduper, and the types Heading, EmbeddedImage, EmbeddedVideo,
+ * HowToData.
+ */
 export type Heading = { id: string; text: string; level: number };
 
 export function countWords(mdxContent: string): number {
@@ -344,8 +368,7 @@ export function extractFaqs(mdxContent: string): Faq[] {
 // range is replaced by the same number of empty lines rather than spliced
 // out, on purpose: the line count is preserved because the retired MDX-to-
 // Tiptap mapper reported FILE lines through this function, and blank lines are
-// inert to the MDX compiler, so the page rendered identically. Nothing calls
-// this since the corpus was retired; it stays beside the extractors it mirrors.
+// inert to the MDX compiler, so the page rendered identically.
 export function stripFaqSection(mdxContent: string): string {
   const lines = mdxContent.split('\n');
   let inCodeFence = false;

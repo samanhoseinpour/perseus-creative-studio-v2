@@ -1,16 +1,11 @@
 /**
  * Validation for the post-level blog fields: everything that reaches a URL,
  * an attribute or a JSON-LD property and is NOT the body doc (blogBody.ts
- * owns that). The importer parses every record through this before any
- * write; step 2's actions do too. Never import from public-page code:
- * zod stays out of the marketing chunks.
+ * owns that). Every /admin/blogs action parses through here. Never import
+ * from public-page code: zod stays out of the marketing chunks.
  *
- * THREE DOORS, and the split is the point:
+ * TWO DOORS, and the split is the point:
  *
- *  - `blogPostFieldsSchema` is the strict base the importer has always used.
- *    Its field set is frozen at what the importer writes, which is also what
- *    keeps `custom_schema` and an author's uploaded photo safe: a `.strict()`
- *    object that never names a column cannot carry a value into a `.set()`.
  *  - `blogDraftSchema` is what autosave and Save accept. Every required
  *    non-empty string relaxes to allow `''`, because a draft is a
  *    half-written post by definition and refusing an empty title would fail
@@ -283,13 +278,6 @@ const editorFields = {
   robotsExtra: blogRobotsExtraSchema.nullable(),
   body: bodyDoc.optional(),
 };
-
-/** The importer's door, unchanged: its field set is frozen at what the
- *  importer writes. Widening it would let a re-import carry an editor-owned
- *  column into its `.set()` and clobber what somebody typed. */
-export const blogPostFieldsSchema = z.object(postShape(1)).strict();
-
-export type BlogPostFields = z.infer<typeof blogPostFieldsSchema>;
 
 /** Autosave and Save. Empty required strings allowed, every shape still
  *  enforced. */

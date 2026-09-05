@@ -195,7 +195,6 @@ import {
   blogAuthorFieldsSchema,
   blogCategoryFieldsSchema,
   blogDraftSchema,
-  blogPostFieldsSchema,
   blogPublishSchema,
   blogRobotsExtraSchema,
   blogSlugSchema,
@@ -928,10 +927,12 @@ const MEDIA = {
 };
 const realBody = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] };
 
-/** The importer door's field set, valid: the 24 base fields and nothing else.
- *  POST is this plus the editor-only fields, which is what lets §7 put the
- *  strictness of each door under test on its OWN complete record. */
-const IMPORTER_POST = {
+/** The 24 base post fields (`postShape`), valid and nothing else. POST is
+ *  this plus the editor-only fields, so a fixture that isolates the shared
+ *  half stays available: an assertion about a base rule reads clearer on a
+ *  record that carries nothing else. Named for the cutover importer, whose
+ *  door this exactly was before it was retired. */
+const BASE_POST = {
   slug: 'a-post',
   title: 'T',
   description: 'D',
@@ -960,7 +961,7 @@ const IMPORTER_POST = {
 
 /** Publish-ready: every required field filled, a hero, a real body. */
 const POST = {
-  ...IMPORTER_POST,
+  ...BASE_POST,
   heroMedia: null,
   ogImageStaticPath: null,
   ogImageMedia: null,
@@ -1043,6 +1044,14 @@ draftRefuses('a canonicalOverride carrying a control character', {
 draftRefuses('a javascript: source href', { sources: [{ title: 's', href: 'javascript:alert(1)' }] });
 draftRefuses('a protocol-relative source href', { sources: [{ title: 's', href: '//evil.com/x' }] });
 draftRefuses('a relative source href', { sources: [{ title: 's', href: '/blogs/x' }] });
+// `rel` is a closed three-value enum, and nothing else in the suite reads it:
+// a source silently carrying rel="me" would be emitted onto a live <a>.
+draftRefuses('a source rel outside the enum', { sources: [{ title: 's', href: 'https://a.b', rel: 'me' }] });
+// The control-char guard on canonicalOverride above is that schema's OWN
+// refinement. This one is the shared `text()` helper's, which every required
+// string in postShape carries, and it is pinned nowhere else: a C0 character
+// in a title reaches a <title> tag and a JSON-LD name.
+draftRefuses('a control character in a required text field', { title: 'a\u0001b' });
 draftRefuses('a sameAs that is not a URL', { entities: [{ name: 'n', sameAs: ['nope'], primary: true }] });
 draftRefuses('an uppercase slug', { slug: 'A-Post' });
 draftRefuses('the reserved slug', { slug: 'authors' });
@@ -1234,12 +1243,6 @@ ok('robots: a string in a boolean flag is refused', !blogRobotsExtraSchema.safeP
 // an assertion that cannot fail.
 ok('draft refuses customSchema as an unknown key', !blogDraftSchema.safeParse({ ...POST, customSchema: { '@type': 'FAQPage' } }).success);
 ok('publish refuses customSchema as an unknown key', !blogPublishSchema.safeParse({ ...POST, customSchema: { '@type': 'FAQPage' } }).success);
-ok('the importer fixture really passes its own door (not a vacuous baseline)', blogPostFieldsSchema.safeParse(IMPORTER_POST).success);
-ok('the importer door refuses customSchema on an otherwise valid record', !blogPostFieldsSchema.safeParse({ ...IMPORTER_POST, customSchema: { '@type': 'FAQPage' } }).success);
-// And its field set is FROZEN at what the importer writes: handed the
-// editor's own record it refuses the extra keys, which is the mechanism that
-// keeps an editor-owned column out of a re-import's `.set()`.
-ok('the importer door refuses the editor-only fields', !blogPostFieldsSchema.safeParse(POST).success);
 
 // ---- 8. Canonical trailing paragraphs --------------------------------------
 // TrailingNode (task 15) appends an empty paragraph whenever the last child is

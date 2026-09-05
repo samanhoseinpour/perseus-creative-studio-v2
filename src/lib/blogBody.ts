@@ -53,9 +53,11 @@ export const LONG_MAX = 2000;
 /** `link` with `href` ONLY. Tiptap's Link declares target/rel/class/title
  *  with defaults that nodeFromJSON would materialise and the editor would
  *  serialise; the render layer decides target/rel. priority 1000 ranks it
- *  FIRST among marks, so `**[x](y)**` renders <strong><a>, as remark does.
- *  Step 2's editor swaps in `Link.extend({ addAttributes: () => ({ href: {
- *  default: null } }) })` with the same name: same JSON. */
+ *  FIRST among marks, so `**[x](y)**` renders <strong><a>, which is the
+ *  nesting the retired MDX mapper produced and the order every stored
+ *  document is already in. The editor mounts `Link.extend({ addAttributes:
+ *  () => ({ href: { default: null } }) })` under the same name, so both sides
+ *  serialise identical JSON. */
 export const BlogLink = Mark.create({
   name: 'link',
   priority: 1000,
@@ -657,8 +659,10 @@ export function countTokens(text: string): number {
 }
 
 /** The editor-era word count: what the reader sees, body plus the FAQ
- *  accordion. NOT what the importer stores (that is the legacy
- *  countWords(mdx), see the spec); step 2's save is the first writer. */
+ *  accordion. This is what every save writes. The 38 rows that arrived
+ *  through the cutover importer still carry the legacy `countWords(mdx)`
+ *  over the whole MDX file until each is next saved, which is why
+ *  `isLegacyWordCount` exists and why the editor announces the change. */
 export function wordCount(view: { doc: BlogDoc; faqs: { question: string; answer: string }[] }): number {
   const faqText = view.faqs.map((f) => `${f.question} ${f.answer}`).join(' ');
   return countTokens(bodyText(view.doc)) + countTokens(faqText);

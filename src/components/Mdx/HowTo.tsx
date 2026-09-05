@@ -1,23 +1,28 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import { deriveStepIds } from '@/utils/extractHeadings';
 
-// Step-by-step block for MDX how-to posts, rendered as a stepper rail (mono
+// Step-by-step block for how-to posts, rendered as a stepper rail (mono
 // numerals on a hairline connector — echoes KeyTakeaways' idiom, not a generic
-// numbered list). The visible block is also the schema source: extractHowTos
-// in utils/extractHeadings regex-parses `<HowTo>`/`<Step title>` out of the
-// raw MDX and the post page emits a schema.org HowTo node whose HowToStep
-// `url` anchors point at the `<li id>`s stamped here — both sides derive ids
-// through the shared deriveStepIds, so anchors can't drift.
+// numbered list). articleMapping.ts builds these elements from the body's
+// `howTo`/`step` nodes; the editor writes them in /admin/blogs.
 //
-// Authoring conventions (the extractor and the audits rely on them):
-// - Place the block under a normal `##` markdown heading — that heading is
-//   the TOC entry and the schema-name fallback (or pass `title` explicitly).
-// - `<Step title="...">` is required; untitled steps are skipped in schema.
-// - No markdown headings (##–####) inside step bodies — they'd TOC-link into
-//   the card's internals. Keep step titles unique within a post.
-// - Leave blank lines around block-level markdown inside <Step> so MDX
-//   parses it (lists, paragraphs, links, <Image /> all work).
+// THE ANCHOR CONTRACT IS THE LOAD-BEARING PART. The post page emits a
+// schema.org HowTo node from `howTos()` in blogBody.ts, walking the same
+// Tiptap doc this renders, and each HowToStep `url` points at an `<li id>`
+// stamped here. Both sides derive those ids through the shared deriveStepIds,
+// so the anchors cannot drift. Change how ids are made in one place only.
+//
+// What used to be authoring convention is now schema, in blogBody.ts:
+// - A step's `title` is required and non-empty (the zod layer refuses ''),
+//   where the old MDX extractor silently skipped an untitled step.
+// - STEP_CONTENT keeps headings, tables, nested howTos and prosCons out of a
+//   step body, so a step can no longer TOC-link into the card's internals.
+// - `step` has no group and is reachable only from `howTo`, so an orphan step
+//   is a validation failure rather than something a renderer has to survive.
 // - `totalTime` is an ISO 8601 duration (PT3H, PT90M) — schema.org totalTime.
+// - The name still falls back to the nearest preceding heading when the
+//   `title` attr is absent. Keep step titles unique within a post: duplicates
+//   are deduped by deriveStepIds, but the anchors read better distinct.
 
 type StepProps = {
   title: string;
