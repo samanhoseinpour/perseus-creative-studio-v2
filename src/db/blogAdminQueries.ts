@@ -234,8 +234,9 @@ export async function getAdminPost(id: string): Promise<AdminPost | null> {
  * Whether this post's stored `word_count` is still the one the IMPORTER wrote.
  *
  * True only for a post that was imported and that the editor has never written
- * to, which is exactly `scripts/import-blogs.mts`'s own skip rule read from
- * the other end. The editor uses it to decide whether to say anything about
+ * to, which is the cutover importer's own skip rule read from the other end:
+ * it refused any post carrying a non-`import` revision. The editor uses it to
+ * decide whether to say anything about
  * the count changing on the first save: the 38 imported rows carry the legacy
  * `countWords(mdx)` over the whole file and the editor stores
  * `wordCount({ doc, faqs })`, which comes out 4 to 21 percent lower and moves

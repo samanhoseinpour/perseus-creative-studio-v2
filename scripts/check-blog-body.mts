@@ -1,7 +1,7 @@
 /**
  * Blog body self-check: the closed Tiptap vocabulary, the href guard, the
- * image-path and Blob-host rules, the derivations, the mapper, the renderer,
- * and (with --db) the public predicate and comparator against real Postgres.
+ * image-path and Blob-host rules, the derivations, the renderer, and (with
+ * --db) the public predicate and comparator against real Postgres.
  *
  * Run:  node --import tsx scripts/check-blog-body.mts
  *       node --env-file=.env.local --import tsx scripts/check-blog-body.mts --db
@@ -44,11 +44,10 @@ import {
   canonicalOverrideSchema,
 } from '@/lib/blogPostSchema';
 import { STUDIO_TZ, dayNoonIn } from '@/lib/calendar';
-import { mdxToTiptap, parseMdx } from '@/lib/mdxToTiptap';
 import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE, PORTFOLIO_SLUG_MAX } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
-import { countWords, deriveStepIds, extractHeadings, stripFaqSection } from '@/utils/extractHeadings';
+import { countWords, deriveStepIds, extractHeadings } from '@/utils/extractHeadings';
 import { articleImageSet, buildAuthorSchema, serializeJsonLd, xHandleFromSameAs } from '@/lib/blogJsonLd';
 import { heroOgUrl } from '@/utils/images';
 import { MAPPED_NODE_NAMES, renderArticle, type ArticleComponents } from '@/components/Blogs/post/articleMapping';
@@ -70,7 +69,7 @@ const eq = (label: string, got: unknown, want: unknown) => {
   if (!ok) fails++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}  got=${JSON.stringify(got)}${ok ? '' : ` want=${JSON.stringify(want)}`}`);
 };
-/* `has`/`lacks` are the substring assertions the mapper and renderer sections
+/* `has`/`lacks` are the substring assertions the renderer and JSON-LD sections
    use. They live here beside `eq` so every section of this file shares one
    assertion vocabulary as it grows, rather than each growing its own. */
 const has = (label: string, hay: string, needle: string) =>
@@ -442,77 +441,18 @@ const categoryFields = { slug: 'branding', title: 'Branding', seoTitle: null, se
 eq('category fields: valid record', blogCategoryFieldsSchema.safeParse(categoryFields).success, true);
 eq('category fields: uppercase slug refused', blogCategoryFieldsSchema.safeParse({ ...categoryFields, slug: 'Branding' }).success, false);
 
-/* ── 6. The mapper over the corpus fixture ───────────────────────────── */
-const fixtureMdx = readFileSync('scripts/blog-fixtures/corpus.mdx', 'utf8');
-const mapped = mdxToTiptap(parseMdx(stripFaqSection(fixtureMdx)));
-eq('mapper: no problems on the corpus fixture', mapped.problems, []);
-eq('mapper: aside unwrapped with a WARN', mapped.notes.some((n) => n.kind === 'WARN' && /aside/.test(n.message)), true);
-eq('mapper: prose Image title dropped with a NOTE', mapped.notes.some((n) => n.kind === 'NOTE' && /title/.test(n.message)), true);
-const validated = validateBlogBody(mapped.doc);
-eq('mapper output validates', validated.ok, true);
+/* ── 6. The corpus fixture ───────────────────────────────────────────── */
+// The renderer below is pinned against the corpus document: every construct
+// the blog uses, in one doc. It was produced by the MDX mapper at the cutover
+// and frozen as canonical Tiptap JSON when that mapper was retired, so the
+// renderer assertions kept the exact document they were written against.
+// Re-validating it on every run is not ceremony: it is what stops the fixture
+// drifting out of the closed vocabulary, which would leave the renderer pinned
+// against a document the store could never hold.
+const validated = validateBlogBody(JSON.parse(readFileSync('scripts/blog-fixtures/corpus.json', 'utf8')));
+eq('corpus fixture validates against the closed vocabulary', validated.ok, true);
 if (!validated.ok) console.log(validated.problems);
 const mdoc = validated.ok ? validated.doc : ({ type: 'doc', content: [] } as BlogDoc);
-const types = (mdoc.content ?? []).map((n) => n.type);
-eq('root-level <br /> became paragraph[hardBreak]', JSON.stringify(mdoc.content?.[2]), JSON.stringify({ type: 'paragraph', content: [{ type: 'hardBreak' }] }));
-eq('inline <br /> became a hardBreak inside the paragraph', mdoc.content?.[4]?.content?.[0]?.type, 'hardBreak');
-eq('bold+link text carries [link, bold] in rank order', JSON.stringify(mdoc.content?.[1]?.content?.find((c) => c.text === 'bold link')?.marks?.map((m) => m.type)), JSON.stringify(['link', 'bold']));
-eq('loose list collapsed to tight', types.filter((t) => t === 'bulletList').length, 2);
-eq('table first row became tableHeader', mdoc.content?.find((n) => n.type === 'table')?.content?.[0]?.content?.[0]?.type, 'tableHeader');
-eq('external flag survives', (mdoc.content?.filter((n) => n.type === 'youtube') ?? []).map((n) => n.attrs?.external), [false, true]);
-eq('instagram defaults', mdoc.content?.find((n) => n.type === 'instagram')?.attrs, { id: 'DPHVbIcCSFz', type: 'p', caption: false });
-const figs = mdoc.content?.filter((n) => n.type === 'figure') ?? [];
-eq('Image width/height from props', [figs[0]?.attrs?.width, figs[0]?.attrs?.height], [150, 150]);
-eq('Image WxH title sets dimensions', [figs[2]?.attrs?.width, figs[2]?.attrs?.height], [1200, 630]);
-eq('Image prose title never stored', 'title' in (figs[1]?.attrs ?? {}), false);
-const howTo = mdoc.content?.find((n) => n.type === 'howTo');
-eq('howTo has two steps', howTo?.content?.length, 2);
-eq('step body keeps a figure', howTo?.content?.[1]?.content?.some((b) => b.type === 'figure'), true);
-eq('prosCons has pros then cons', mdoc.content?.find((n) => n.type === 'prosCons')?.content?.map((c) => c.type), ['pros', 'cons']);
-const aPara = mdoc.content?.find((n) => n.type === 'paragraph' && n.content?.[0]?.marks?.some((m) => m.type === 'link' && m.attrs?.href === 'https://www.instagram.com/perseustudio/'));
-eq('flow <a> became a paragraph with a link mark', Boolean(aPara), true);
-eq('the H2 after the FAQ section survives', headings(mdoc).some((x) => x.text === 'Ready to create better media?'), true);
-eq('Quick Answer stays in the body', headings(mdoc).some((x) => x.text === 'Quick Answer'), true);
-eq('the FAQ H2 is gone from the body', headings(mdoc).some((x) => /Frequently/.test(x.text)), false);
-const refused = mdxToTiptap(parseMdx('Text with {index=0} an expression.\n\n<Weird />\n\n##### h5'));
-eq('mapper refuses expressions, unknown JSX and h5', refused.problems.length, 3);
-const codeInBold = mdxToTiptap(parseMdx('**bold `code` here**'));
-eq('code span inside bold drops the outer mark with a WARN', codeInBold.notes.some((n) => n.kind === 'WARN' && /code span/.test(n.message)), true);
-// Review fix round 1. (a) A GFM task list is outside the vocabulary and its
-// checkbox would otherwise vanish with nothing said: the guard is per ITEM
-// and the list still maps, so one run reports every problem. (b) The check
-// and the importer both compose mdxToTiptap(parseMdx(stripFaqSection(src))),
-// so a problem after the FAQ block can only name its FILE line if the strip
-// keeps the line count. (c) The flow <a> puts the link mark on EVERY inline
-// that may carry marks, hardBreak included, not on text alone.
-const taskList = mdxToTiptap(parseMdx('- plain\n- [ ] todo'));
-eq('task-list checkbox refused once, at the item line', taskList.problems, [{ line: 2, message: 'task-list checkboxes are not supported' }]);
-eq('task-list: the rest of the list still maps', taskList.doc.content?.[0]?.content?.length, 2);
-// <Weird /> is file line 15: the FAQ block is lines 3-11 and the strip
-// removes 3-12 (through the line before the next H2).
-const faqSrc = [
-  'A paragraph.',
-  '',
-  '## FAQ',
-  '',
-  '### Is this an FAQ?',
-  '',
-  'Yes, it is.',
-  '',
-  '### And another?',
-  '',
-  'Also yes.',
-  '',
-  '## Next',
-  '',
-  '<Weird />',
-].join('\n');
-eq('stripFaqSection keeps the line count', stripFaqSection(faqSrc).split('\n').length, faqSrc.split('\n').length);
-const afterFaq = mdxToTiptap(parseMdx(stripFaqSection(faqSrc)));
-eq('a problem after the FAQ block reports its file line', afterFaq.problems.map((p) => p.line), [15]);
-eq('the FAQ block is still stripped', afterFaq.doc.content?.map((n) => n.type), ['paragraph', 'heading']);
-const aBreak = mdxToTiptap(parseMdx('<a href="https://example.com">\n  one<br />two\n</a>'));
-eq('flow <a>: the link mark covers text, hardBreak, text', (aBreak.doc.content?.[0]?.content ?? []).map((c) => `${c.type}:${(c.marks ?? []).map((m) => m.type).join('+')}`), ['text:link', 'hardBreak:link', 'text:link']);
-eq('flow <a> with a break validates', validateBlogBody(aBreak.doc).ok, true);
 
 /* ── 8. JSON-LD ──────────────────────────────────────────────────────── */
 const ser = serializeJsonLd({ name: '</script><script>alert(1)</script>', u: 'a\u2028b' });
@@ -535,9 +475,9 @@ eq('buildAuthorSchema org is the publisher ref', buildAuthorSchema({ slug: 'pers
 // HowToStep url, a header row that lands in <tbody> loses the black head, a
 // list item keeping its <p> picks up the prose spacing twice, and a bold link
 // nested the wrong way round still reads as a bold link. The fixture is the
-// corpus mdoc, so the renderer is pinned against the same document the mapper
-// is, with stubs standing in for the components that pull server-only modules
-// and the REAL HowTo/ProsCons, which introspect their children.
+// frozen corpus document, so the renderer is pinned against every construct
+// the blog uses at once, with stubs standing in for the components that pull
+// server-only modules and the REAL HowTo/ProsCons, which introspect children.
 const unhandled: string[] = [];
 const stubs: ArticleComponents = {
   Image: (p) =>

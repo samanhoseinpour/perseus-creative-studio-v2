@@ -13,7 +13,7 @@ The app splits into two route groups. **`(marketing)`** is the public site: serv
 - **Email & files:** **Resend** for contact/auth notification emails; **Vercel Blob** for uploads — career résumés, avatars, and ticket screenshots are stored `private` and served only through authenticated streaming route handlers; portfolio/client imagery is `public` (it renders to anonymous visitors on the marketing site).
 - **Animation:** `motion` (Framer Motion) and Lenis smooth-scrolling (desktop-only via `SmartLenis`).
 - **3D / GL effects:** React Three Fiber (Three.js) for the shader work, plus `cobe` for the animated service-area globes. (`dotted-map` is a build-time generator only — `scripts/generate-dotted-map.mjs` — never shipped to the client.)
-- **Blog body:** Tiptap JSON (`@tiptap/static-renderer` on the server; `@tiptap/core`, `@tiptap/starter-kit`, `@tiptap/extension-table`). `remark-gfm` is a devDependency, used only by the MDX importer (`src/lib/mdxToTiptap.ts`).
+- **Blog body:** Tiptap JSON — `@tiptap/react` + `@tiptap/starter-kit` in the `/admin/blogs` editor, `@tiptap/static-renderer` on the server for the public page (`@tiptap/core`, `@tiptap/extension-table`).
 - **Media:** Self-hosted AVIFs in `public/images`, served through `next/image` — the server-only `<Img>` wrapper (or `<ImgClient>` in client components) with a **custom loader** (`src/lib/imageLoader.ts`) that maps each requested width to pre-generated static variants (`-384/-640/-960/-1280`, built by `npm run image-variants` together with the blur-up placeholder map `src/lib/imageBlur.generated.json`). The runtime image optimizer is **off**. Unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Admin-uploaded media lives in Vercel Blob and bypasses `<Img>`: portfolio imagery renders through `ProjectMediaImage` (`next/image` with a per-instance loader over the Blob variant rungs generated at upload), avatars through a native `<img>`. Video embeds use `YouTube` / `Instagram`; the About-page Instagram grid is a sandboxed Elfsight iframe (`IGFeed`).
 - **Reviews:** the Google-reviews section is fetched server-side from the Places API (New) in `src/lib/googleReviews.ts` (`GOOGLE_PLACES_API_KEY`, never exposed to the client).
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
@@ -85,8 +85,7 @@ src/
 │   ├── Pwa/                  # service-worker registration + offline banner
 │   └── ui/                   # shadcn-style primitives
 ├── constants/                # Code-defined content: services.ts, projects.ts (category chrome), faq.ts,
-│                             # blogs.ts (the superseded importer registry, pending removal), …
-├── content/blogs/            # MDX post bodies — the superseded importer corpus, pending removal
+│                             # blogIndexFaqs.ts (hub copy), …
 ├── db/                       # Drizzle schemas (schema.ts + auth-schema.ts), db clients, and the query
 │                             # modules: admin, portfolio, task, ticket, payroll, activity, blog
 ├── hooks/                    # Custom React hooks
@@ -96,17 +95,17 @@ src/
 │                             # image loader/variants/blur map, sitemap builders — see CLAUDE.md for the map
 ├── instrumentation.ts        # onRequestError — catches every server throw, including post-stream ones
 ├── proxy.ts                  # optimistic session-cookie gate for /admin
-└── utils/                    # lenis wrapper, MDX heading extraction (importer + legacy), pagination, helpers
+└── utils/                    # lenis wrapper, heading/slug derivation, pagination, helpers
 drizzle/                      # committed SQL migrations (never `drizzle-kit push`)
-scripts/                      # image tooling, DB seeders, the blog importer, the IndexNow + PSI
-                              # runners, and a set of one-off .mts self-checks (see CLAUDE.md)
+scripts/                      # image tooling, DB seeders, the IndexNow + PSI runners, and a set
+                              # of one-off .mts self-checks (see CLAUDE.md)
 ```
 
 The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/components` barrel is for **pages/layouts only**; components import each other by direct path (`@/components/Button`, `./BlogCard`, …) so Turbopack's export-level tree-shaking keeps route chunks slim — see `CLAUDE.md`.
 
 ## Content & Data
 
-- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. They are written at `/admin/blogs`. Three things about that are worth knowing before touching it: the editor writes a **working copy** while the public renders the **published revision**, so an explicit Save on a live post deliberately changes nothing a reader sees until you publish; autosave invalidates *no* cache at all (every prerendered marketing page carries the `blogs` tag, so a keystroke timer would re-render the whole public site); and status moves through its own doors, never through a save. `npm run db:import-blogs` is the superseded cutover path, still in the tree pending removal — a post the editor has touched is skipped by it for good, so it can never overwrite an edit.
+- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. They are written at `/admin/blogs`. Three things about that are worth knowing before touching it: the editor writes a **working copy** while the public renders the **published revision**, so an explicit Save on a live post deliberately changes nothing a reader sees until you publish; autosave invalidates *no* cache at all (every prerendered marketing page carries the `blogs` tag, so a keystroke timer would re-render the whole public site); and status moves through its own doors, never through a save. The 38 posts arrived through a one-off MDX importer at the cutover, which was retired once the editor shipped; `revision_source = 'import'` on a post's oldest revision is what is left of it, and the editor reads that to know whether a post's stored `word_count` is still the importer's.
 - **Scheduled posts** are published by `/api/cron/blog-publish` every 15 minutes, so a post can go live up to that long after the minute the writer picked. It shares the monitoring slot on purpose (a scale-to-zero Neon database is already awake at that minute) and must invalidate through `invalidateBlogFromCron`: `updateTag` throws outside a server action, and `revalidateTag(tag, 'max')` is stale-while-revalidate rather than expire, which would serve `/blogs` its pre-publish snapshot. See `src/lib/blogInvalidate.ts`.
 - **Authors** are `blog_authors` rows managed from the posts list; every byline, profile page, and `Person`/`Organization` JSON-LD resolves through the store. `src/lib/adminIdentity.ts` is deliberately **not** wired to them: a dashboard account and a blog byline are two different things.
 - **Portfolio** splits between code and database: `src/constants/projects.ts` holds only category *chrome* (hero/FAQ/SEO copy and the site-wide category order), while case studies, their media, and the client roster live in Postgres (`projects`, `project_media`, `clients`) behind the cached accessors in `src/lib/projectsStore.ts`. The `/admin` actions invalidate by cache tag, so edits appear on the live site without a redeploy. The Partners logo marquee is DB-driven too (`getPartnerLogos`).
@@ -180,7 +179,6 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
 - `npm run db:seed` — seed the admin accounts (idempotent; prints one-time temp passwords).
 - `npm run db:seed-clients` — seed the ~84 logo-wall clients with marquee membership/order.
 - `npm run db:seed-bios` — fill missing client bios with researched drafts (internal reference copy).
-- `npm run db:import-blogs` — import `src/constants/blogs.ts` + `src/content/blogs/**` into the `blog_*` tables (dry-run by default; `-- --apply` writes). The blog content path until the /admin editor ships; invalidate the `blogs` cache tag afterwards, since a redeploy alone won't refresh the store.
 - `npm run indexnow` — ping IndexNow (Bing, and through it Copilot / ChatGPT search grounding) with changed URLs. **Run it after a content change deploys** — `npm run indexnow -- /blogs/<slug>`, or `-- --sitemap services` after services copy. Never ping an unchanged URL; false freshness is a spam signal.
 - `npm run psi` — PageSpeed Insights v5 against the **live production site** (Lighthouse scores, lab metrics, CrUX field data, mobile + desktop). Local changes don't move these numbers until deployed.
 

@@ -1,0 +1,742 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": {
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Intro heading"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A paragraph with "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "bold"
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "italic"
+            }
+          ],
+          "text": "italic"
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "italic"
+            }
+          ],
+          "text": "underscore italic"
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "code"
+            }
+          ],
+          "text": "inline code"
+        },
+        {
+          "type": "text",
+          "text": ", a "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://example.com/a"
+              }
+            }
+          ],
+          "text": "link"
+        },
+        {
+          "type": "text",
+          "text": " and "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://example.com/b"
+              }
+            },
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "bold link"
+        },
+        {
+          "type": "text",
+          "text": " and "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://example.com/c"
+              }
+            },
+            {
+              "type": "italic"
+            }
+          ],
+          "text": "italic link"
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "hardBreak"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A second paragraph after a root-level spacer."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "hardBreak"
+        },
+        {
+          "type": "text",
+          "text": "A paragraph that starts with an inline break."
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "tight one"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "tight two with "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://example.com/d"
+                      }
+                    }
+                  ],
+                  "text": "a link"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "orderedList",
+      "attrs": {
+        "start": 1,
+        "type": null
+      },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "ordered one"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "ordered two"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "loose one"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "loose two"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "blockquote",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "A single-paragraph blockquote."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": {
+        "language": "txt"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "a fenced block"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "content": [
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableHeader",
+              "attrs": {
+                "colspan": 1,
+                "rowspan": 1,
+                "colwidth": null,
+                "align": null
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Head A"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableHeader",
+              "attrs": {
+                "colspan": 1,
+                "rowspan": 1,
+                "colwidth": null,
+                "align": null
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Head B"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": {
+                "colspan": 1,
+                "rowspan": 1,
+                "colwidth": null,
+                "align": null
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "cell a"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": {
+                "colspan": 1,
+                "rowspan": 1,
+                "colwidth": null,
+                "align": null
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "cell b"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": {
+                "colspan": 1,
+                "rowspan": 1,
+                "colwidth": null,
+                "align": null
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "cell c"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": {
+                "colspan": 1,
+                "rowspan": 1,
+                "colwidth": null,
+                "align": null
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "cell d"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "youtube",
+      "attrs": {
+        "id": "dQw4w9WgXcQ",
+        "title": null,
+        "description": null,
+        "uploadDate": null,
+        "external": false
+      }
+    },
+    {
+      "type": "youtube",
+      "attrs": {
+        "id": "Gly3VY4zUG8",
+        "title": null,
+        "description": null,
+        "uploadDate": null,
+        "external": true
+      }
+    },
+    {
+      "type": "instagram",
+      "attrs": {
+        "id": "DPHVbIcCSFz",
+        "type": "p",
+        "caption": false
+      }
+    },
+    {
+      "type": "figure",
+      "attrs": {
+        "image": {
+          "type": "static",
+          "src": "/images/blogs/production/x.webp"
+        },
+        "alt": "An alt",
+        "caption": "A caption",
+        "credit": null,
+        "size": "default",
+        "width": 150,
+        "height": 150,
+        "priority": false
+      }
+    },
+    {
+      "type": "figure",
+      "attrs": {
+        "image": {
+          "type": "static",
+          "src": "/images/blogs/production/y.avif"
+        },
+        "alt": "Prose title",
+        "caption": "Cap",
+        "credit": null,
+        "size": "default",
+        "width": null,
+        "height": null,
+        "priority": false
+      }
+    },
+    {
+      "type": "figure",
+      "attrs": {
+        "image": {
+          "type": "static",
+          "src": "/images/blogs/production/z.avif"
+        },
+        "alt": "Dims in title",
+        "caption": "Cap",
+        "credit": null,
+        "size": "default",
+        "width": 1200,
+        "height": 630,
+        "priority": false
+      }
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How to do the thing"
+        }
+      ]
+    },
+    {
+      "type": "howTo",
+      "attrs": {
+        "title": null,
+        "totalTime": "PT4H"
+      },
+      "content": [
+        {
+          "type": "step",
+          "attrs": {
+            "title": "Clear counters"
+          },
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Clear counters, straighten furniture, and remove\npersonal items."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "step",
+          "attrs": {
+            "title": "Open blinds"
+          },
+          "content": [
+            {
+              "type": "bulletList",
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Blinds up"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Lights on"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "figure",
+              "attrs": {
+                "image": {
+                  "type": "static",
+                  "src": "/images/blogs/production/w.avif"
+                },
+                "alt": "Inside a step",
+                "caption": null,
+                "credit": null,
+                "size": "default",
+                "width": null,
+                "height": null,
+                "priority": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "prosCons",
+      "attrs": {
+        "title": "DIY video"
+      },
+      "content": [
+        {
+          "type": "pros",
+          "content": [
+            {
+              "type": "bulletList",
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "marks": [
+                            {
+                              "type": "bold"
+                            }
+                          ],
+                          "text": "Zero cash cost"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "cons",
+          "content": [
+            {
+              "type": "bulletList",
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Inconsistent audio"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://www.instagram.com/perseustudio/"
+              }
+            }
+          ],
+          "text": "See our latest works on instagram ->"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "For real estate advertising, compliance is not a small detail."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Quick Answer"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Not an FAQ section."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Ready to create better media?"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A closing section after the FAQ block."
+        }
+      ]
+    }
+  ]
+}

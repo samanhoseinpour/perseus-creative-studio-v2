@@ -2219,9 +2219,9 @@ export const monitoringDaily = pgTable(
 export type MonitoringDaily = typeof monitoringDaily.$inferSelect;
 
 // ───────────────────────────────────────────────────────────────────────────
-// Blog: authors, categories, posts and their revisions. Replaces the
-// code-defined registry (src/constants/blogs.ts + src/content/blogs/**), which
-// stays in the tree, unread by the app, until step 2's editor ships.
+// Blog: authors, categories, posts and their revisions. These tables replaced
+// a code-defined MDX registry, which was imported once at the cutover and then
+// retired; /admin/blogs is the content path.
 //
 // Content model: `blog_posts` is the WORKING copy and the admin-queryable
 // columns; `blog_post_revisions` are immutable snapshots; the public site

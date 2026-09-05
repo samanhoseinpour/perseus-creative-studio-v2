@@ -2,8 +2,8 @@
 // FAQPage node in src/app/(marketing)/blogs/page.tsx so the JSON-LD matches
 // what users see (a divergence would invalidate the rich-result eligibility).
 // Hub copy, not post content, so it lives in its own registry-free module:
-// the hub and BlogGrid read it from here and no longer import
-// src/constants/blogs.ts (whose own copy stays until the registry is retired).
+// the hub and BlogGrid read it from here. It is the one piece of blog copy
+// still defined in code, because it belongs to the hub rather than to a post.
 export const BLOG_INDEX_FAQS: { question: string; answer: string }[] = [
   {
     question: 'How often does Perseus Creative Studio publish new articles?',

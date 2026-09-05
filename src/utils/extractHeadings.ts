@@ -342,9 +342,10 @@ export function extractFaqs(mdxContent: string): Faq[] {
 // section detection — only call this when extractFaqs found entries, so a
 // mal-formatted section is never silently dropped from the body. The removed
 // range is replaced by the same number of empty lines rather than spliced
-// out, on purpose: the line count is preserved because the blog-body mapper
-// (src/lib/mdxToTiptap.ts) reports FILE lines through this function, and
-// blank lines are inert to the MDX compiler, so the page renders identically.
+// out, on purpose: the line count is preserved because the retired MDX-to-
+// Tiptap mapper reported FILE lines through this function, and blank lines are
+// inert to the MDX compiler, so the page rendered identically. Nothing calls
+// this since the corpus was retired; it stays beside the extractors it mirrors.
 export function stripFaqSection(mdxContent: string): string {
   const lines = mdxContent.split('\n');
   let inCodeFence = false;

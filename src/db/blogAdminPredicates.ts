@@ -122,8 +122,8 @@ export function selectStatusCounts(
  * What a post's revision history says about where its stored `word_count` came
  * from, in one round trip.
  *
- * THE EDITED HALF IS THE IMPORTER'S OWN SKIP RULE, not a second reading of it:
- * scripts/import-blogs.mts refuses to touch a post carrying ANY non-`import`
+ * THE EDITED HALF IS THE CUTOVER IMPORTER'S OWN SKIP RULE, not a second reading
+ * of it: that importer refused to touch a post carrying ANY non-`import`
  * revision anywhere in its history, because that is one the editor has already
  * written to. The same existence test answers the question the editor asks,
  * which is whether the number in `word_count` is still the legacy

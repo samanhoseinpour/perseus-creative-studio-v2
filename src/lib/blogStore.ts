@@ -39,8 +39,7 @@ import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
  * read. TTL 86400 like projectsStore: unstable_cache lowers a route's
  * revalidate to the smallest TTL read during its render, and Navbar reads
  * the blog panel on EVERY marketing route. Tags are the real invalidation
- * path (step 2's actions call updateTag); a gap re-import is followed by
- * `vercel cache invalidate --tag blogs`.
+ * path: the /admin/blogs actions call updateTag.
  *
  * Cached values round-trip through JSON: dates are STUDIO_TZ day keys
  * (strings), never Date. The public site is a viewerless surface, so every
@@ -48,13 +47,12 @@ import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
  */
 
 // blogTag(slug) refreshes only that post's detail entry; the snapshot (cards,
-// neighbours, the slug gate) refreshes only on BLOGS_TAG; and the category and
-// author tags attach to no cache entry yet. So step 2's actions must ALWAYS
-// call updateTag(BLOGS_TAG), whatever else they tag.
+// neighbours, the slug gate) refreshes only on BLOGS_TAG. So every write door
+// must ALWAYS call updateTag(BLOGS_TAG), whatever else it tags. There is
+// deliberately no per-category or per-author tag: neither would be attached to
+// a cache entry, and a tag nothing carries is an invalidation that never runs.
 export const BLOGS_TAG = 'blogs';
 export const blogTag = (slug: string) => `blog:${slug}`;
-export const blogCategoryTag = (slug: string) => `blog-category:${slug}`;
-export const blogAuthorTag = (slug: string) => `blog-author:${slug}`;
 
 const TTL_SECONDS = 86400;
 

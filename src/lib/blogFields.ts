@@ -514,8 +514,6 @@ export type BlogSnapshotView = {
  * change that never happened, on an arbitrary subset of saves, which would
  * move every "Updated" byline and ping IndexNow for nothing.
  *
- * (scripts/import-blogs.mts has its own copy for the same reason. It is four
- * lines and lives in a script; importing across that boundary would be worse.)
  */
 function sortKeys(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortKeys);

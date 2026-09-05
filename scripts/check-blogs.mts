@@ -8491,7 +8491,7 @@ try {
     ok('db: so the notice is spent, without any explicit save', !(await legacy(imported.id)));
 
     // One editor save anywhere in the history, and the edited half closes it
-    // permanently. This is the exact predicate scripts/import-blogs.mts skips
+    // permanently. This is the exact predicate the cutover importer skipped
     // on. Asserted on a SEPARATE post whose counts still match, so it is the
     // edited half doing the work rather than the divergence above.
     const republished = await newDraft('provenance-edited', 'Edited', { wordCount: LEGACY_WORDS });
