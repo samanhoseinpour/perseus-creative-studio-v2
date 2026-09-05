@@ -503,6 +503,33 @@ export function stripTrailingEmptyParagraphs(doc: BlogDoc): BlogDoc {
 }
 
 /**
+ * A doc as PLAIN data: every object reachable from it with `Object.prototype`.
+ *
+ * prosemirror-model builds a node's `attrs` with `Object.create(null)`
+ * (`computeAttrs` and `defaultAttrs`), and `Node.toJSON()` hands that object
+ * back BY REFERENCE, so `editor.getJSON()` is a tree whose every `attrs`, on
+ * nodes and on marks alike, has no prototype. React's server-action serializer
+ * refuses those as non-plain ("Classes or null prototypes are not supported")
+ * and, because Next passes a temporary-reference set, ships each one as a `$T`
+ * reference rather than throwing; the server decodes that as a tagged
+ * FUNCTION, and the zod layer above refuses `content.0.attrs: expected object,
+ * received function` on every node that carries attributes. That was every
+ * autosave after the first keystroke on any real post (found 2026-09-05), with
+ * nothing on screen to say why: `JSON.stringify` accepts a null-prototype
+ * object, so the editor's dirty snapshot worked while the wire did not.
+ *
+ * A JSON round trip rather than a hand-written walk, so whatever ProseMirror
+ * or a later extension puts into a document that is not plain data is
+ * flattened the same way. The editor calls this on every `getJSON()` before
+ * the document leaves the canvas; `scripts/check-blogs.mts` pins the need (a
+ * positive control on the null prototype) and the cure, through React's own
+ * `encodeReply`.
+ */
+export function plainDoc(doc: BlogDoc): BlogDoc {
+  return JSON.parse(JSON.stringify(doc)) as BlogDoc;
+}
+
+/**
  * A paragraph a reader would see as empty: no content at all, or nothing in
  * it but whitespace text. The zod layer refuses an EMPTY text node but
  * accepts one holding a single space, so `<p> </p>` is a legal, storable,

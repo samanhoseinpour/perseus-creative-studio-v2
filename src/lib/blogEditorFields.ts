@@ -20,7 +20,7 @@
  * the same allowance for exactly the same jsonb payload shapes, and states
  * that NOTHING there may become a value import. The same holds here.
  *
- * SEVEN THINGS LIVE HERE, and each of them is silent when it is wrong:
+ * NINE THINGS LIVE HERE, and each of them is silent when it is wrong:
  *
  *  1. `buildPostFields` — the payload, including the map from a form's `''`
  *     back onto a nullable column. Miss one and either the save is refused
@@ -53,6 +53,14 @@
  *     imported rows carry the legacy whole-file count and the editor's formula
  *     comes out 4 to 21 percent lower, which visibly moves the "N min read"
  *     byline. The change is intended; being silent about it is not.
+ *  8. `bodyRefusalSentence` — what a save or a restore says when the validator
+ *     refuses the document. It names the first problems, because they are the
+ *     only thing that says WHICH block was refused; the sentence alone left
+ *     the reason on the dev server's stdout and the writer with "Not saved".
+ *  9. `autosaveRefusalNotice` — whether the quiet autosave path announces a
+ *     refusal. Once per distinct sentence: the loop retries every 1.5 s of
+ *     typing and a toast on that timer is noise, while a refusal under a long
+ *     article's body was never seen at all.
  *
  * Run `node --import tsx scripts/check-blogs.mts` after touching any of it.
  */
@@ -625,6 +633,60 @@ export function describeWordCountChange(
   if (previous === next) return null;
   const direction = next < previous ? 'down' : 'up';
   return `Word count went ${direction} from ${previous.toLocaleString('en-CA')} to ${next.toLocaleString('en-CA')}. The editor counts the article and its FAQ answers, which is what the reading time on the page is based on.`;
+}
+
+// ── What a refused body says ────────────────────────────────────────────────
+
+/** How many validator problems the refusal names before it counts the rest. */
+const BODY_REFUSAL_NAMED = 3;
+
+/**
+ * The sentence a save or a restore hands back when `validateBlogBody` refuses
+ * the document.
+ *
+ * The validator's problems are diagnostics (`content.0.attrs: Invalid input:
+ * expected object, received function`), not copy, and they are also the only
+ * thing that says WHICH block was refused. So they are named rather than
+ * hidden: the editor is the one thing that can produce a malformed document,
+ * which makes every one of these a defect to report rather than a writer's
+ * mistake, and a ticket carrying the diagnostic is what makes it findable.
+ * The whole list still goes to the monitoring trail through `reportError`.
+ *
+ * It used to be one house sentence with the reason left on the dev server's
+ * stdout, which is how ten refusals on 2026-09-05 read as "Not saved" and
+ * nothing else.
+ */
+export function bodyRefusalSentence(problems: readonly string[]): string {
+  const named = problems.slice(0, BODY_REFUSAL_NAMED);
+  const rest = problems.length - named.length;
+  const detail =
+    named.length === 0
+      ? ''
+      : ` The check refused it with: ${named.join(' | ')}${rest > 0 ? ` (and ${rest} more)` : ''}.`;
+  return `This content could not be saved.${detail} Undo your last change or reload the editor. If it keeps happening, file a ticket with this message.`;
+}
+
+// ── What an autosave refusal announces ──────────────────────────────────────
+
+/**
+ * The sentence the quiet autosave path announces for a refusal, or null.
+ *
+ * Autosave is quiet by design: a refusal is already visible as "Not saved" in
+ * the bar and beside the field that caused it, and a toast on a keystroke
+ * timer would be noise. That reasoning failed for the BODY, whose alert sits
+ * under an article that may run five screens, so a refused body was never seen
+ * at all. The rule is therefore to announce each distinct refusal ONCE: the
+ * body's sentence ahead of any field's, and never the same sentence twice in a
+ * row. `lastAnnounced` is what the screen last toasted, cleared by a clean
+ * save, so a refusal that comes back after a fix is announced again.
+ */
+export function autosaveRefusalNotice(
+  lastAnnounced: string | null,
+  issues: Record<string, string>,
+): string | null {
+  const next = issues.body ?? Object.values(issues)[0] ?? null;
+  if (next === null || next === lastAnnounced) return null;
+  return next;
 }
 
 // ── The search snippet ──────────────────────────────────────────────────────

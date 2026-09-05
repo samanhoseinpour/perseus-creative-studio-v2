@@ -123,6 +123,7 @@ import {
   blogSchema,
   figures,
   internalLinkSlugs,
+  plainDoc,
   stripTrailingEmptyParagraphs,
   validateBlogBody,
   type BlogDoc,
@@ -201,6 +202,8 @@ import {
   editorSkeletonToolbar,
 } from '@/components/Admin/blogs/editor/editorBox';
 import {
+  autosaveRefusalNotice,
+  bodyRefusalSentence,
   BLOG_SAVE_STATE_LABELS,
   blogEditorActions,
   buildPostFields,
@@ -1388,6 +1391,91 @@ eq(
 const blankDoc = validateBlogBody(asDoc(EMPTY));
 eq('validate: a blank doc stays a one-paragraph doc', blankDoc.ok ? blankDoc.doc.content?.length : null, 1);
 
+// ---- 9. What leaves the editor is PLAIN JSON --------------------------------
+// The editor's document reaches the save doors through a server action, and
+// React's serializer refuses an object with no prototype. prosemirror-model
+// builds every node's attrs with `Object.create(null)` (`computeAttrs`,
+// `defaultAttrs`) and `Node.toJSON()` hands that object back BY REFERENCE, so
+// `editor.getJSON()` is a tree whose every `attrs` has no prototype. React
+// encodes each one as a `$T` temporary reference (Next passes a reference set,
+// so it does not throw), the server decodes that as a tagged FUNCTION, and the
+// strict zod layer refuses `content.0.attrs: expected object, received
+// function` on every node that carries attributes: every heading, list, code
+// block, embed, figure and link mark. Found 2026-09-05 in the dev log, ten
+// refusals: every autosave after the first keystroke on any real post, the bar
+// reading "Not saved" and no reason on screen.
+//
+// `JSON.stringify` accepts a null-prototype object, which is why the dirty
+// snapshot worked while the wire did not, and why nothing here caught it:
+// every assertion above validates a JSON LITERAL. These run a REAL ProseMirror
+// document through React's REAL serializer.
+{
+  const pmDoc = blogSchema.nodeFromJSON(
+    asDoc(
+      { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Section' }] },
+      { type: 'orderedList', content: [{ type: 'listItem', content: [para('one')] }] },
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'link', marks: [{ type: 'link', attrs: { href: '/blogs/other' } }] }],
+      },
+      {
+        type: 'figure',
+        attrs: { image: { type: 'media', ...MEDIA }, alt: 'a', caption: null, credit: null, size: 'default', width: null, height: null, priority: false },
+      },
+    ),
+  );
+  const raw = pmDoc.toJSON() as BlogDoc;
+
+  // Every object reachable from a doc, so the sweep cannot be satisfied by
+  // checking the nodes and missing the attrs, or the attrs and missing a mark's.
+  const objectsIn = (value: unknown, out: object[] = []): object[] => {
+    if (value && typeof value === 'object') {
+      out.push(value);
+      for (const v of Array.isArray(value) ? value : Object.values(value)) objectsIn(v, out);
+    }
+    return out;
+  };
+  const nullProto = (objs: object[]): number =>
+    objs.filter((o) => Object.getPrototypeOf(o) === null).length;
+
+  // THE POSITIVE CONTROL. If this goes red, prosemirror-model stopped building
+  // attrs without a prototype and `plainDoc` has lost its reason: retire it on
+  // purpose rather than leave a guard nothing needs. Four: the heading, the
+  // ordered list, the link mark and the figure.
+  eq(
+    'a real ProseMirror toJSON() carries null-prototype attrs (positive control, see the comment)',
+    nullProto(objectsIn(raw)),
+    4,
+  );
+  const plain = plainDoc(raw);
+  eq('plainDoc: nothing reachable from the result lacks a prototype', nullProto(objectsIn(plain)), 0);
+  eq('plainDoc: and the document is byte-identical as JSON', JSON.stringify(plain), JSON.stringify(raw));
+  ok('plainDoc: returns a new tree and leaves the input alone', plain !== raw && nullProto(objectsIn(raw)) === 4);
+
+  // Through React's OWN serializer, the one the browser's action call runs. A
+  // `"$T` in the encoded reply is the marker the server turns into a function.
+  const load = createRequire(import.meta.url);
+  const flight = load('next/dist/compiled/react-server-dom-turbopack/client.browser.js') as {
+    createTemporaryReferenceSet: () => unknown;
+    encodeReply: (value: unknown, options: { temporaryReferences: unknown }) => Promise<unknown>;
+  };
+  const encode = async (body: unknown): Promise<string> =>
+    String(
+      await flight.encodeReply([{ id: 'x', version: 1, fields: { body } }], {
+        temporaryReferences: flight.createTemporaryReferenceSet(),
+      }),
+    );
+  const encodedRaw = await encode(raw);
+  const encodedPlain = await encode(plain);
+  ok('React encodes the raw toJSON() tree with temporary references (positive control)', encodedRaw.includes('"$T'));
+  ok('and encodes the plainDoc tree with none', !encodedPlain.includes('"$T'));
+  eq(
+    'so the server receives exactly the document the writer has',
+    JSON.parse(encodedPlain)[0].fields.body,
+    plain,
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 12. The posts list URL contract (blogFilters.ts)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2216,12 +2304,16 @@ ok(
     /\bbody: doc,/.test(PREPARE_SAVE_CODE) &&
     !/\bbody: data\.body/.test(PREPARE_SAVE_CODE),
 );
-// validateBlogBody's problems are diagnostics (`(root): Invalid input`,
-// `body over 2000000 bytes`), not copy. The member gets one house sentence and
-// the raw string goes to the monitoring trail.
+// validateBlogBody's problems are diagnostics (`content.0.attrs: Invalid
+// input: expected object, received function`), and they are ALSO the only
+// thing that says WHICH block was refused. The member gets the house sentence
+// carrying the first few of them (`bodyRefusalSentence`, pinned in §13), and
+// the whole list goes to the monitoring trail. It used to be the sentence
+// alone, with the reason living only on the dev server's stdout: ten refusals
+// on 2026-09-05, and nobody at the screen could say why.
 ok(
-  'a refused body gives the member a sentence, not a validator diagnostic',
-  /issues: \{ body: BODY_REFUSAL \}/.test(PREPARE_SAVE_CODE) &&
+  'a refused body tells the member what was refused, and reports the whole list',
+  /issues: \{ body: bodyRefusalSentence\(checked\.problems\) \}/.test(PREPARE_SAVE_CODE) &&
     /reportError\('\[blogs\] prepareSave body refused', new Error\(checked\.problems/.test(
       PREPARE_SAVE_CODE,
     ),
@@ -3320,6 +3412,10 @@ ok(
   'the restoreRevision slice runs to its own catch (fixture guard)',
   RESTORE_REVISION.length > 2000 &&
     RESTORE_REVISION.includes("reportError('[blogs] restoreRevision failed'"),
+);
+ok(
+  'a restore whose stored body will not validate says what was refused, like a save',
+  /refuse\(\{ body: bodyRefusalSentence\(checked\.problems\) \}\)/.test(stripComments(RESTORE_REVISION)),
 );
 
 // (The "gates FIRST and OUTSIDE its try" sweep is not repeated here: §8's now
@@ -6516,6 +6612,17 @@ eq(
   [false, false],
 );
 
+// What leaves the canvas is PLAIN data (the plainDoc pins in §11 prove the
+// need and the cure): the one place the document is read out of ProseMirror
+// runs it through `plainDoc` before `stripTrailingEmptyParagraphs`, and
+// `getJSON()` is named exactly once, so no second read-out can hand the page a
+// null-prototype tree that the server would receive as functions.
+eq('BodyEditor reads the document out of ProseMirror exactly once', occurrences(BODY_EDITOR_CODE, 'getJSON()'), 1);
+ok(
+  'and that read leaves the canvas through plainDoc, then the strip',
+  /onChange\(stripTrailingEmptyParagraphs\(plainDoc\(instance\.getJSON\(\)/.test(BODY_EDITOR_CODE),
+);
+
 // `safeHref` inside the COMMAND, not only in the dialog: the command is the
 // door every caller reaches, and the dialog's copy is a message rather than a
 // control.
@@ -7722,6 +7829,45 @@ eq('and it is trimmed', snippetClamp('  padded  ', 60), 'padded');
       .sort(),
     [],
   );
+}
+
+
+// ── What a refused body SAYS ────────────────────────────────────────────────
+// The sentence the save and restore doors hand back when the validator refuses
+// the document. It names the first problems, because they are the only thing
+// that says which block was refused, and counts the rest.
+{
+  const one = bodyRefusalSentence(['content.0.attrs: Invalid input: expected object, received function']);
+  ok('the body refusal names the problem', one.includes('content.0.attrs: Invalid input: expected object, received function'));
+  ok('and says what to do next', one.includes('Undo your last change') && one.includes('file a ticket'));
+  const many = bodyRefusalSentence(['a: x', 'b: y', 'c: z', 'd: w', 'e: v']);
+  ok('five problems: three named and the rest counted', many.includes('a: x | b: y | c: z (and 2 more)') && !many.includes('d: w'));
+  ok('three problems: all named, none counted', !bodyRefusalSentence(['a', 'b', 'c']).includes('more'));
+  ok('no problems: still a whole sentence, no dangling clause', !bodyRefusalSentence([]).includes('refused it with'));
+  ok('the refusal carries no em dash', !bodyRefusalSentence(['x']).includes('\u2014'));
+}
+
+// ── What an autosave refusal announces, and how often ───────────────────────
+// Autosave is quiet by design: a refusal is visible as "Not saved" in the bar
+// and beside the field that caused it. That breaks down for the BODY, whose
+// alert sits under an article that may be five screens long, so a refusal
+// there was invisible. The rule is to announce a refusal ONCE: the loop retries
+// every 1.5 s of typing and a toast on that timer is noise, while a refusal
+// never announced is the defect this branch shipped with.
+{
+  eq('the body issue is announced ahead of any other', autosaveRefusalNotice(null, { slug: 'a', body: 'b' }), 'b');
+  eq('a field issue is announced when there is no body issue', autosaveRefusalNotice(null, { _form: 'f', slug: 'a' }), 'f');
+  eq('the same sentence is not announced twice', autosaveRefusalNotice('b', { body: 'b' }), null);
+  eq('a different sentence is', autosaveRefusalNotice('b', { body: 'c' }), 'c');
+  eq('nothing to announce when nothing was refused', autosaveRefusalNotice(null, {}), null);
+  eq('and a refusal after a clean save is announced again', autosaveRefusalNotice(null, { body: 'b' }), 'b');
+
+  // The screen reaches it on the QUIET path, exactly once, and inside
+  // applyResult where every door's answer lands.
+  const editor = stripComments(readRepoFile('../src/components/Admin/blogs/PostEditor.tsx'));
+  const apply = region(editor, 'const applyResult', 'const autosaveCall', 'applyResult');
+  eq('PostEditor announces a quiet refusal through autosaveRefusalNotice, once', occurrences(editor, 'autosaveRefusalNotice('), 1);
+  ok('and does so inside applyResult', apply.includes('autosaveRefusalNotice('));
 }
 
 

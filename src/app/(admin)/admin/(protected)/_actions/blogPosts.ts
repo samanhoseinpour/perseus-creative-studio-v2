@@ -106,6 +106,7 @@ import {
   type BlogPostStatus,
   type BlogWorkingView,
 } from '@/lib/blogFields';
+import { bodyRefusalSentence } from '@/lib/blogEditorFields';
 import {
   beforeRef,
   hiddenRef,
@@ -127,18 +128,11 @@ import { delPublic, listPublic } from '@/lib/publicBlob';
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * What a member reads when the body will not validate.
- *
- * `validateBlogBody`'s own problems are VALIDATOR DIAGNOSTICS, not copy:
- * `(root): Invalid input`, `body over 2000000 bytes`,
- * `content.0.type: Invalid discriminator value…`. None of them is a sentence,
- * and the editor is the only thing that can produce a malformed document, so
- * the raw string is diagnostic information and belongs on the monitoring
- * trail, not on screen.
- */
-const BODY_REFUSAL =
-  'This content could not be saved. Undo your last change or reload the editor. If it keeps happening, the post may be too long to store.';
+// What a member reads when the body will not validate is `bodyRefusalSentence`
+// in src/lib/blogEditorFields.ts: the house sentence carrying the first few
+// validator problems, because they are the only thing that says WHICH block
+// was refused. The whole list still goes to the monitoring trail through
+// `reportError` at both call sites.
 
 /**
  * Take a revision back out after a save that did not land, without letting the
@@ -368,7 +362,7 @@ async function prepareSave(
     reportError('[blogs] prepareSave body refused', new Error(checked.problems.join(' | ')));
     return {
       ok: false,
-      result: { ok: false, error: 'validation', issues: { body: BODY_REFUSAL } },
+      result: { ok: false, error: 'validation', issues: { body: bodyRefusalSentence(checked.problems) } },
     };
   }
   const doc = checked.doc;
@@ -1794,7 +1788,7 @@ export async function restoreRevision(
     const checked = validateBlogBody(snap.body);
     if (!checked.ok) {
       reportError('[blogs] restoreRevision body refused', new Error(checked.problems.join(' | ')));
-      return refuse({ body: BODY_REFUSAL });
+      return refuse({ body: bodyRefusalSentence(checked.problems) });
     }
     const doc = checked.doc;
 

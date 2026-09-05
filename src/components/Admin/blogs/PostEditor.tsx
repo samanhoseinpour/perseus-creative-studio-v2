@@ -49,6 +49,7 @@ import {
 } from '@/app/(admin)/admin/(protected)/_actions/blogPosts';
 import type { BlogMedia } from '@/db/schema';
 import {
+  autosaveRefusalNotice,
   buildPostFields,
   describeWordCountChange,
   wordCountLine,
@@ -167,6 +168,9 @@ export default function PostEditor({
    *  has resolved. `issues` is state and the render that scheduled the call
    *  cannot see the value set during it. */
   const lastIssues = useRef<Record<string, string>>({});
+  /** The refusal sentence the screen last toasted, so a quiet autosave can
+   *  announce each distinct refusal once rather than on every retry. */
+  const announcedRef = useRef<string | null>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   const readOnly = post.status === 'trash';
@@ -182,12 +186,14 @@ export default function PostEditor({
 
   /** A door's answer, as the autosave loop's four outcomes. `quiet` is the
    *  autosave path, where a refusal is already visible as "Not saved" beside
-   *  the field that caused it and a toast on a keystroke timer would be noise. */
+   *  the field that caused it, so it is announced once per distinct sentence
+   *  (`autosaveRefusalNotice`) rather than on every retry of the timer. */
   const applyResult = useCallback(
     (res: BlogMutationResult | undefined, quiet: boolean): SaveOutcome => {
       if (!res) return { kind: 'transport' };
       if (res.ok) {
         lastIssues.current = {};
+        announcedRef.current = null;
         setIssues({});
         setWords(res.wordCount);
         // Said at most once, and only on a post whose stored count is still
@@ -212,13 +218,26 @@ export default function PostEditor({
       if (res.error === 'validation') {
         lastIssues.current = res.issues;
         setIssues(res.issues);
-        if (!quiet) {
+        if (quiet) {
+          // Quiet, not silent. The alert beside a field is enough for a field
+          // the writer can see, and nothing at all for a body refusal whose
+          // alert sits under five screens of article, which is how a save
+          // defect shipped with the bar reading "Not saved" and no reason.
+          const notice = autosaveRefusalNotice(announcedRef.current, res.issues);
+          if (notice) {
+            announcedRef.current = notice;
+            toast.error(notice);
+          }
+        } else {
           const [field, message] = Object.entries(res.issues)[0] ?? [];
           if (field && field !== '_form' && field !== 'publishAt') {
             const owner = inspectorPaneFor(field);
             if (owner !== 'canvas') setPane(owner);
           }
-          if (message) toast.error(message);
+          if (message) {
+            announcedRef.current = message;
+            toast.error(message);
+          }
         }
         return { kind: 'refused' };
       }
