@@ -57,6 +57,7 @@ import {
   nextSlugFollow,
   scheduleInstant,
   slugFollowArms,
+  type BlogSaveCarries,
   type InspectorPane,
 } from '@/lib/blogEditorFields';
 import { publicUrlFor } from '@/lib/blogFields';
@@ -249,17 +250,28 @@ export default function PostEditor({
    * unreachable; it is retried once rather than reported, because reporting a
    * conflict we caused ourselves would be a false alarm about the writer's own
    * typing.
+   *
+   * `carries` says whether this door sent `fields`. Four of them do; the five
+   * status moves send none, and marking their success as "saved" is what lost
+   * a writer's typing before `nextSavedSnapshot` existed.
    */
   const act = useCallback(
     async (
       call: (version: number) => Promise<BlogMutationResult | undefined>,
+      carries: BlogSaveCarries,
       done?: string,
     ): Promise<boolean> => {
       setBusy(true);
       try {
-        let outcome = await run((version) => call(version).then((res) => applyResult(res, false)));
+        let outcome = await run(
+          (version) => call(version).then((res) => applyResult(res, false)),
+          carries,
+        );
         if (outcome.kind === 'conflict' && outcome.own) {
-          outcome = await run((version) => call(version).then((res) => applyResult(res, false)));
+          outcome = await run(
+            (version) => call(version).then((res) => applyResult(res, false)),
+            carries,
+          );
         }
         if (outcome.kind === 'ok') {
           if (done) toast.success(done);
@@ -343,7 +355,7 @@ export default function PostEditor({
     // same moment. `nextSlugFollow` has no path back, which is what stops a
     // later title edit rewriting a slug the door would then refuse.
     const publishes = dialog === 'publish' || dialog === 'update' || dialog === 'publish-now';
-    void act(call, done).then((ok) => {
+    void act(call, 'fields', done).then((ok) => {
       if (ok && publishes) setSlugFollow((current) => nextSlugFollow(current, 'published'));
       // A refusal that names a field the writer has to go and fix belongs
       // beside that field, not behind a dialog covering it. `_form` and
@@ -417,6 +429,7 @@ export default function PostEditor({
         onSave={() => {
           void act(
             (version) => savePost({ id: post.id, version, fields }),
+            'fields',
             'Saved.',
           );
         }}
@@ -615,6 +628,7 @@ export default function PostEditor({
         onConfirm={() => {
           void act(
             (version) => amendPublishedDate(post.id, version, amendDay),
+            'no-fields',
             'The publication date is changed.',
           ).then((ok) => {
             if (ok) setAmendOpen(false);
@@ -638,7 +652,7 @@ export default function PostEditor({
         destructive
         pending={busy}
         onConfirm={() => {
-          void act((version) => trashPost(post.id, version), 'Moved to the trash.').then(
+          void act((version) => trashPost(post.id, version), 'no-fields', 'Moved to the trash.').then(
             (ok) => {
               if (ok) setConfirm(null);
             },
@@ -658,7 +672,7 @@ export default function PostEditor({
         confirmLabel="Restore"
         pending={busy}
         onConfirm={() => {
-          void act((version) => restorePost(post.id, version), 'Restored.').then((ok) => {
+          void act((version) => restorePost(post.id, version), 'no-fields', 'Restored.').then((ok) => {
             if (ok) setConfirm(null);
           });
         }}
@@ -673,7 +687,7 @@ export default function PostEditor({
         destructive
         pending={busy}
         onConfirm={() => {
-          void act((version) => unpublishPost(post.id, version), 'Unpublished.').then(
+          void act((version) => unpublishPost(post.id, version), 'no-fields', 'Unpublished.').then(
             (ok) => {
               if (ok) setConfirm(null);
             },
@@ -691,6 +705,7 @@ export default function PostEditor({
         onConfirm={() => {
           void act(
             (version) => unschedulePost(post.id, version),
+            'no-fields',
             'The schedule is cancelled.',
           ).then((ok) => {
             if (ok) setConfirm(null);

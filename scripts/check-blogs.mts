@@ -178,6 +178,7 @@ import {
   inspectorPaneFor,
   PRIMARY_ACTION_GATE,
   minutesToTimeValue,
+  nextSavedSnapshot,
   nextSlug,
   nextSlugFollow,
   primaryAction,
@@ -4879,6 +4880,42 @@ ok(
   ok('and never counts the whole corpus', !/statusCounts\(\s*\)/.test(page));
 }
 
+// ── /admin/feedback reads posts it is entitled to, and no others ────────────
+// AN ACCESS BOUNDARY wearing a query's clothes. `feedback` is in
+// `DEFAULT_AREAS` and `blogs` deliberately is not, and the feedback page
+// renders every row it is handed as `title (status)`. So an unfiltered select
+// hands anybody holding the default grant a table of every draft, scheduled,
+// archived and binned post while /admin/blogs and the preview both bounce
+// them. It was harmless while the corpus was 38 imported published posts; this
+// programme is what makes drafts exist.
+//
+// Both arms are pinned, because dropping either is a different silent bug: no
+// `publicPostsWhere` and the zero-vote coverage rows disappear, no EXISTS and
+// a post unpublished since it was voted on drops out of the page taking its
+// tally with it, which is the behaviour the page's own comment promises.
+{
+  const feedbackRead = stripComments(
+    region(
+      readRepoFile('../src/db/blogQueries.ts'),
+      'export function fetchFeedbackPosts(',
+      '\n}\n',
+      'fetchFeedbackPosts',
+    ),
+  );
+  eq(
+    'the feedback read is published posts plus voted-on slugs, never every row',
+    [
+      feedbackRead.includes('.where('),
+      feedbackRead.includes('publicPostsWhere()'),
+      feedbackRead.includes('exists('),
+      feedbackRead.includes('articleFeedback.slug'),
+      // A join would return a post once per vote, and this page counts rows.
+      feedbackRead.includes('Join('),
+    ],
+    [true, true, true, true, false],
+  );
+}
+
 // Next prefetches every in-viewport Link, so twenty-five row titles pointing at
 // the editor would fire twenty-five RSC requests for a route nobody opened —
 // the reason the calendar's day chips carry the same flag. Counted in pairs, so
@@ -5674,6 +5711,68 @@ eq(
     eq(`and a ${name} with no id is refused too`, parseAttrs(name, {}), false);
   }
 
+  // A WELL-FORMED OBJECT OF THE WRONG SHAPE, which is the case `json()` alone
+  // cannot answer: it accepts any non-null, non-array object, which is
+  // everything a zero-dependency leaf can say about one. Everything below is a
+  // plain object and every one of them is a figure the zod layer refuses, so
+  // without the value guard in `blogEditorExtensions.ts` they all PASTE.
+  //
+  // The harm is two-sided and the smaller half is the visible one. `Figure.tsx`
+  // discriminates on `type === 'media'` alone and renders anything else as a
+  // bare `<img src>`, so a writer induced to paste article HTML from a page an
+  // attacker controls fetches an arbitrary URL from their authenticated
+  // browser, and an arbitrary string reaches `blurDataURL`, which next/image
+  // writes into an inline `background-image:url(...)` — around
+  // `BLUR_DATA_URL_RE`, which exists to stop exactly that. Nothing bad can be
+  // STORED, because `prepareSave` validates on both doors, which is why the
+  // other half matters: the node pastes, and every save afterwards fails with
+  // an opaque refusal naming a block the writer never typed.
+  {
+    const pasted = (image: unknown) =>
+      parseAttrs('figure', { 'data-image': JSON.stringify(image), 'data-alt': 'x' });
+    eq(
+      'a figure whose image is a plain object of the wrong shape is refused too',
+      [
+        // A media image whose rung URL is not derived from its own pathname:
+        // the one thing standing between an editor-typed URL and a visitor's
+        // <img src>, per publicBlobFields.ts.
+        pasted({
+          variants: { full: { url: 'https://evil.example/x.avif', pathname: 'blogs/x.avif', width: 10, height: 10 } },
+          blurDataUrl: null,
+          type: 'media',
+        }),
+        // The same store, a foreign host.
+        pasted({
+          variants: { full: { ...rung('blogs/x.avif', 'someone-else.public.blob.vercel-storage.com'), width: 10, height: 10 } },
+          blurDataUrl: null,
+          type: 'media',
+        }),
+        // A blur value that is not a small image data URL.
+        pasted({ ...MEDIA, blurDataUrl: 'javascript:alert(1)', type: 'media' }),
+        // A static path that is not a /images path at all, and one that is a
+        // traversal wearing the prefix.
+        pasted({ type: 'static', src: 'https://evil.example/x.png' }),
+        pasted({ type: 'static', src: '/images/../secrets.avif' }),
+        // A discriminant the union does not carry, which `Figure.tsx` would
+        // render through its `<img src>` arm.
+        pasted({ type: 'link', src: 'https://evil.example/x.png' }),
+        // And an object with no discriminant at all.
+        pasted({ src: '/images/a.avif' }),
+      ],
+      [false, false, false, false, false, false, false],
+    );
+    // NOT VACUOUS: the two legal shapes still cross the clipboard. A guard that
+    // refused everything would satisfy every line above and break every paste.
+    eq(
+      'while both legal shapes still paste',
+      [
+        pasted({ ...MEDIA, type: 'media' }) !== false,
+        pasted({ type: 'static', src: '/images/a.avif' }) !== false,
+      ],
+      [true, true],
+    );
+  }
+
   // THE SCHEMA-LEGAL NULL, both ends, because nothing else covered the render
   // half. `figure.image` defaults to null in `blogBody.ts`, so a figure with
   // no image is a legal ProseMirror node even though `imageSourceSchema`
@@ -5782,18 +5881,48 @@ eq(
   // broken. It is invisible in every other check here, because the stored
   // document is perfectly valid either way. `FigureDialog` trims at submit;
   // the node view trims on blur, which is the same moment.
-  const FIGURE_CODE = stripComments(
-    readRepoFile('../src/components/Admin/blogs/editor/nodeviews/Figure.tsx'),
+  //
+  // A RECURSIVE SWEEP, not a filename, and that correction is the whole
+  // lesson. This was written against `Figure.tsx` after a review found the
+  // coercion there, and `HowTo.tsx` and `ProsCons.tsx` then SHIPPED carrying
+  // exactly the shape it forbids: "Name these steps (optional)" and "Name what
+  // is being weighed (optional)" could not take a leading space, and the
+  // assertion that names the rule stayed green throughout. A hardcoded path
+  // proves one file and says nothing about its siblings, which is the same
+  // correction the em dash sweep below already made.
+  const viewFile = (entry: string) =>
+    stripComments(readRepoFile(`../src/components/Admin/blogs/editor/nodeviews/${entry}`));
+  const viewFiles = readdirSync(
+    new URL('../src/components/Admin/blogs/editor/nodeviews/', import.meta.url),
+    { recursive: true },
+  )
+    .map((entry) => String(entry))
+    .filter((entry) => entry.endsWith('.tsx'))
+    .sort();
+  // A short read would make every assertion below trivially true, which is the
+  // shape of a check that proves nothing.
+  ok('the node view directory read found its files (fixture guard)', viewFiles.length >= 8);
+  const handlers = viewFiles.flatMap((entry) =>
+    [...viewFile(entry).matchAll(/onChange=\{[^}]*\}/g)].map((match) => ({
+      entry,
+      code: match[0],
+    })),
   );
-  ok('read the figure node view (drift guard)', FIGURE_CODE.length > 1000);
+  ok('and the sweep really read some handlers (fixture guard)', handlers.length >= 4);
   eq(
-    'the figure controls coerce on blur, never on every keystroke',
-    [
-      [...FIGURE_CODE.matchAll(/onChange=\{[^}]*\}/g)].filter((match) => match[0].includes('trim(')),
-      occurrences(FIGURE_CODE, 'onBlur='),
-    ],
-    [[], 3],
+    'no node view coerces an optional field on every keystroke',
+    handlers.filter((handler) => handler.code.includes('trim(')).map((handler) => handler.entry),
+    [],
   );
+  // The other half, so the sweep above cannot be satisfied by node views that
+  // simply never commit: the three files carrying an optional text field are
+  // exactly the three that trim on blur.
+  eq(
+    'the optional-text controls commit on blur instead',
+    viewFiles.filter((entry) => viewFile(entry).includes('onBlur=')),
+    ['Figure.tsx', 'HowTo.tsx', 'ProsCons.tsx'],
+  );
+  eq('and the figure commits all three of its fields', occurrences(viewFile('Figure.tsx'), 'onBlur='), 3);
 }
 
 // ── overrideByName: the door that cannot append ─────────────────────────────
@@ -6534,7 +6663,18 @@ eq('and neither does a placeholder on a locked post', slugFollowArms({ slug: new
       const can = (to: BlogPostStatus) => transitionProblem(status, to, history) === null;
       eq(`${status}/${everPublished}: publish offered iff the move is allowed`, actions.publish, can('published'));
       eq(`${status}/${everPublished}: schedule offered iff the move is allowed`, actions.schedule, can('scheduled'));
-      eq(`${status}/${everPublished}: unpublish offered iff the move is allowed`, actions.unpublish, can('archived'));
+      // `can('archived')` ALONE is not the rule, and reading it as one is what
+      // put Unpublish in the bin's overflow menu: `archived` is where
+      // `restoreTarget` sends a formerly live post back to, so the move is
+      // allowed from `trash` and the door then answers "This post is in Trash,
+      // so it is already off the site." `unschedule` one line up was narrowed
+      // the same way, and this is the same shape of dead control.
+      eq(
+        `${status}/${everPublished}: unpublish offered only on a live post the move is allowed from`,
+        actions.unpublish,
+        status === 'published' && can('archived'),
+      );
+      eq(`${status}/${everPublished}: and never from the bin`, actions.unpublish && status === 'trash', false);
       eq(`${status}/${everPublished}: trash offered iff the move is allowed`, actions.trash, can('trash'));
       // The three that are not transitions carry their own condition.
       eq(`${status}/${everPublished}: reschedule only on a scheduled post`, actions.reschedule, status === 'scheduled');
@@ -6753,6 +6893,106 @@ eq('and it is trimmed', snippetClamp('  padded  ', 60), 'padded');
   eq('there are four save states', labels.length, 4);
   eq('each has its own words', new Set(labels).size, 4);
   ok('and none carries an em dash', labels.every((label) => !label.includes('—')));
+}
+
+// ---- What an `ok` may call saved ------------------------------------------
+// A DATA-LOSS PATH, and the only one in this feature where the screen tells
+// the writer their work is safe while it is not. Nine doors ride the autosave
+// mutex and four of them carry `fields`; the ok branch used to advance the
+// saved baseline for all nine, so a status move marked the editor's CURRENT
+// payload saved. The sequence: open a live post, add a Source row with a title
+// and no URL (`compactPostLists` keeps a half-filled row, so `sources.0.href`
+// is refused on every autosave and the bar correctly reads "Not saved"), then
+// Unpublish from the overflow menu. The door succeeds, `applyResult` clears
+// the issues, and the baseline advances: the bar reads "Saved", the Save
+// button greys out because it is `disabled={frozen || !dirty}`, the field
+// error disappears and the `beforeunload` guard goes with it. The writer
+// leaves and the typing is gone.
+{
+  eq('a call that carried the fields advances the saved baseline', nextSavedSnapshot('fields', 'typed', 'stored'), 'typed');
+  eq('a call that carried none keeps it', nextSavedSnapshot('no-fields', 'typed', 'stored'), 'stored');
+  // Both ends of the pair, so neither arm can be satisfied by a function that
+  // simply returns its second or its third argument.
+  eq('and the decision is the flag, not the values', [
+    nextSavedSnapshot('fields', 'same', 'same'),
+    nextSavedSnapshot('no-fields', 'same', 'same'),
+  ], ['same', 'same']);
+
+  // The hook has to REACH that decision, and reach it once. `savedRef` and
+  // `savedSnapshot` are the same fact in two places (a ref for the async paths
+  // and state for the render), so a second write to either is a second answer.
+  const AUTOSAVE_HOOK = stripComments(readRepoFile('../src/components/Admin/blogs/useAutosave.ts'));
+  ok('read the autosave hook (drift guard)', AUTOSAVE_HOOK.length > 1000);
+  eq(
+    'the saved baseline moves in exactly one place, through nextSavedSnapshot',
+    [
+      occurrences(AUTOSAVE_HOOK, 'nextSavedSnapshot('),
+      occurrences(AUTOSAVE_HOOK, 'savedRef.current ='),
+      occurrences(AUTOSAVE_HOOK, 'setSavedSnapshot('),
+    ],
+    [1, 1, 1],
+  );
+  // The autosave loop itself always carries the payload: it IS the payload.
+  eq(
+    'and the loop and Cmd+S both send it as a fields call',
+    occurrences(AUTOSAVE_HOOK, "'fields'"),
+    3,
+  );
+
+  // Every explicit door names what it sent. The literals are read in SOURCE
+  // ORDER over the whole file rather than per call site, so a tenth door added
+  // later shifts the list and has to be looked at, which a per-door table
+  // could not do.
+  const POST_EDITOR = stripComments(readRepoFile('../src/components/Admin/blogs/PostEditor.tsx'));
+  ok('read the editor screen (drift guard)', POST_EDITOR.length > 1000);
+  eq(
+    'every explicit door tells the loop whether it carried the fields',
+    [...POST_EDITOR.matchAll(/'(fields|no-fields)'/g)].map((match) => match[1]),
+    ['fields', 'fields', 'no-fields', 'no-fields', 'no-fields', 'no-fields', 'no-fields'],
+  );
+  // And each one is paired with the right door. The flag a door passes is the
+  // next one in the file after its own name, because `act` takes it as the
+  // argument straight after the call: for the three primary doors that is the
+  // `act(call, 'fields', done)` at the end of `onPrimary`, which is what sends
+  // all three.
+  // The LAST word-boundary occurrence, because every door is named twice: once
+  // in the import list at the top, where the next literal in the file would be
+  // whichever door happens to be called first, and once at its call site. The
+  // boundaries matter too: `schedulePost` is a substring of `unschedulePost`
+  // and `publishPost` of `unpublishPost`.
+  const flagAfter = (door: string): string => {
+    const hits = [...POST_EDITOR.matchAll(new RegExp(`\\b${door}\\b`, 'g'))];
+    const at = hits.at(-1)?.index;
+    if (at === undefined) return 'door not found';
+    return /'(fields|no-fields)'/.exec(POST_EDITOR.slice(at))?.[1] ?? 'no flag';
+  };
+  eq(
+    'and the four that send a payload are exactly the four that say so',
+    Object.fromEntries(
+      [
+        'savePost',
+        'publishPost',
+        'schedulePost',
+        'updateSchedule',
+        'amendPublishedDate',
+        'trashPost',
+        'restorePost',
+        'unpublishPost',
+        'unschedulePost',
+      ].map((door) => [door, flagAfter(door)]),
+    ),
+    {
+      savePost: 'fields',
+      publishPost: 'fields',
+      schedulePost: 'fields',
+      updateSchedule: 'fields',
+      amendPublishedDate: 'no-fields',
+      trashPost: 'no-fields',
+      restorePost: 'no-fields',
+      unpublishPost: 'no-fields',
+      unschedulePost: 'no-fields',
+    },
+  );
 }
 
 // ---- The editor screen's own source ---------------------------------------

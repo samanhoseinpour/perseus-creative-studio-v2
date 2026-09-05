@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { BlogSaveState } from '@/lib/blogEditorFields';
+import {
+  nextSavedSnapshot,
+  type BlogSaveCarries,
+  type BlogSaveState,
+} from '@/lib/blogEditorFields';
 
 /**
  * The editor's save loop: one writer at a time, a debounce, a backoff, and one
@@ -42,6 +46,13 @@ import type { BlogSaveState } from '@/lib/blogEditorFields';
  * exactly why the discriminator is kept: if the mutex ever leaks, the failure
  * mode without it is a false "somebody else changed this" that stops autosave
  * and loses work. A guard whose whole job is to be redundant is cheap.
+ *
+ * WHAT AN `ok` ADVANCES, which is the other thing a caller has to tell this
+ * hook. Five of the doors riding the mutex send a status change and no fields
+ * at all, so their success says nothing about the words on screen; only a call
+ * that CARRIED the payload may move the saved baseline. `nextSavedSnapshot` in
+ * `blogEditorFields.ts` owns that decision so the check script can run it, and
+ * the comment there spells out the sequence that loses a writer's typing.
  */
 
 /** What a save door did, in the only four shapes this hook reacts to. The
@@ -80,8 +91,11 @@ export type Autosave = {
   /** A foreign write landed. Autosave has stopped and will not restart. */
   blocked: boolean;
   /** Run an explicit action behind the mutex. Resolves with its outcome, so
-   *  the caller can navigate or toast only once it really landed. */
-  run: (call: SaveCall) => Promise<SaveOutcome>;
+   *  the caller can navigate or toast only once it really landed. `carries`
+   *  says whether the call sent the editor's payload, and is required rather
+   *  than defaulted: a door added later must decide, and the wrong answer
+   *  either loses work or leaves a saved post reading "Unsaved changes". */
+  run: (call: SaveCall, carries: BlogSaveCarries) => Promise<SaveOutcome>;
   /** Save now, through the same door autosave uses. Bound to Cmd+S. */
   saveNow: () => Promise<SaveOutcome | null>;
 };
@@ -137,7 +151,11 @@ export function useAutosave({
   const dirty = snapshot !== savedSnapshot;
 
   const runCall = useCallback(
-    async (call: SaveCall, retryable: boolean): Promise<SaveOutcome> => {
+    async (
+      call: SaveCall,
+      carries: BlogSaveCarries,
+      retryable: boolean,
+    ): Promise<SaveOutcome> => {
       // Queue behind anything already writing. A `while` rather than a single
       // await so two callers arriving together still serialize.
       while (busyRef.current) {
@@ -173,8 +191,11 @@ export function useAutosave({
       if (outcome.kind === 'ok') {
         versionRef.current = outcome.version;
         epochRef.current += 1;
-        savedRef.current = sentSnapshot;
-        setSavedSnapshot(sentSnapshot);
+        // The version moved whatever the door was; the BASELINE moves only for
+        // a call that carried the payload. See `nextSavedSnapshot`.
+        const nextSaved = nextSavedSnapshot(carries, sentSnapshot, savedRef.current);
+        savedRef.current = nextSaved;
+        setSavedSnapshot(nextSaved);
         attemptRef.current = 0;
         return outcome;
       }
@@ -208,12 +229,15 @@ export function useAutosave({
     [],
   );
 
-  const run = useCallback((call: SaveCall) => runCall(call, false), [runCall]);
+  const run = useCallback(
+    (call: SaveCall, carries: BlogSaveCarries) => runCall(call, carries, false),
+    [runCall],
+  );
 
   const saveNow = useCallback(async (): Promise<SaveOutcome | null> => {
     if (blockedRef.current || !enabledRef.current) return null;
     if (snapshotRef.current === savedRef.current) return null;
-    return runCall(saveRef.current, false);
+    return runCall(saveRef.current, 'fields', false);
   }, [runCall]);
 
   // One effect owns both the mirrors and the debounce, so the timer can never
@@ -223,12 +247,12 @@ export function useAutosave({
     saveRef.current = save;
     enabledRef.current = enabled;
     retryRunRef.current = () => {
-      void runCall(saveRef.current, true);
+      void runCall(saveRef.current, 'fields', true);
     };
     if (!enabled || blocked) return;
     if (snapshot === savedSnapshot) return;
     const timer = setTimeout(() => {
-      void runCall(saveRef.current, true);
+      void runCall(saveRef.current, 'fields', true);
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [snapshot, save, enabled, blocked, savedSnapshot, runCall]);

@@ -45,7 +45,13 @@ import {
 import type { DOMOutputSpec } from '@tiptap/pm/model';
 import Suggestion, { type SuggestionOptions } from '@tiptap/suggestion';
 
-import { CUSTOM_NODE_NAMES, EXTENSIONS, blogSchema, type BlogCustomNodeName } from '@/lib/blogBody';
+import {
+  CUSTOM_NODE_NAMES,
+  EXTENSIONS,
+  blogImageSourceSchema,
+  blogSchema,
+  type BlogCustomNodeName,
+} from '@/lib/blogBody';
 import type { BlogBlockItem } from '@/lib/blogEditorBlocks';
 import {
   BLOG_NODE_TAG,
@@ -139,6 +145,36 @@ export function overrideByName(
  * children must, or its content is dropped on paste. Reading the answer off
  * the schema is what stops that list drifting from the schema it describes.
  */
+/**
+ * The VALUE half of the paste guard, and the reason it lives here.
+ *
+ * `blogNodeAttrsFromDOM` vouches for an attribute's SHAPE: `json()` accepts
+ * any non-null, non-array object, which is everything a zero-dependency leaf
+ * can say about one. `figure.image` needs more than a shape. It is a
+ * discriminated union whose `static` arm is pinned to `STATIC_IMAGE_PATH_RE`
+ * and whose `media` arm pins every rung's URL to OUR public Blob store, and
+ * `Figure.tsx` branches on `type === 'media'` alone: anything else is rendered
+ * as a bare `<img src>`. So without this, article HTML from a page an attacker
+ * controls could paste a figure that fetches an arbitrary URL from the
+ * writer's authenticated browser, and put an arbitrary string where
+ * `blurDataURL` goes.
+ *
+ * Nothing bad could ever be STORED (`prepareSave` runs `validateBlogBody` on
+ * both doors and keeps only the canonical result), which is exactly why the
+ * secondary harm was the visible one: the node pasted, and every save after it
+ * failed with an opaque refusal naming a block the writer had not typed. That
+ * is the loss `BLOG_NODE_REQUIRED_ATTRS` already refuses for a MISSING image,
+ * one step along.
+ *
+ * It is a refusal rather than a repair because a rule returning `false` is the
+ * mechanism ProseMirror already has: the element is not matched, so nothing is
+ * inserted. A missing block is visible; an unsavable document is not.
+ */
+const pastedAttrsRefused = (
+  name: BlogCustomNodeName,
+  attrs: Record<string, unknown>,
+): boolean => name === 'figure' && !blogImageSourceSchema.safeParse(attrs.image).success;
+
 const clipboardHtml =
   (name: BlogCustomNodeName) =>
   (extension: AnyExtension): AnyExtension =>
@@ -153,7 +189,10 @@ const clipboardHtml =
         return [
           {
             tag: blogNodeSelector(name),
-            getAttrs: (element: HTMLElement) => blogNodeAttrsFromDOM(name, element),
+            getAttrs: (element: HTMLElement) => {
+              const attrs = blogNodeAttrsFromDOM(name, element);
+              return attrs === false || pastedAttrsRefused(name, attrs) ? false : attrs;
+            },
           },
         ];
       },

@@ -40,9 +40,15 @@ export default function HowToNodeView({ node, updateAttributes, editor }: ReactN
           disabled={!editor.isEditable}
           placeholder="Name these steps (optional)"
           aria-label="Title for these steps"
-          onChange={(event) =>
-            updateAttributes({ title: event.target.value.trim() === '' ? null : event.target.value })
-          }
+          onChange={(event) => updateAttributes({ title: event.target.value })}
+          onBlur={(event) => {
+            // Coerced on BLUR, never on a keystroke, which is the rule
+            // `Figure.tsx` states in full. Trimming inside `onChange` makes a
+            // LEADING SPACE impossible: the first space trims to empty,
+            // becomes null, and the controlled input swallows it.
+            const next = event.target.value.trim();
+            updateAttributes({ title: next === '' ? null : next });
+          }}
         />
       </div>
 

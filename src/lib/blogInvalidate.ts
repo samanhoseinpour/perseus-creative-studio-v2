@@ -285,9 +285,21 @@ function applyBlogInvalidation(
   if (!wasPublic && !isPublic) return;
 
   refreshPublicBlog(tag);
-  if (current !== undefined) tag(blogTag(current.slug));
+  // The per-slug DATA entry, and the post's own PRERENDERED PAGE beside it.
+  // `/blogs/[blog]` is statically generated from `listPublishedParams()`, so
+  // its Full Route Cache entry is a second thing holding the old bytes;
+  // expiring the tag the store's entry carries is documented to reach it, but
+  // nothing here proves that, and the failure mode is a takedown that reports
+  // success while anonymous visitors keep reading the article for up to the
+  // store's 24-hour TTL. `revalidatePath` on the path itself costs one call
+  // and removes the dependency on an assumption.
+  if (current !== undefined) {
+    tag(blogTag(current.slug));
+    revalidatePath(publicUrlFor(current.slug));
+  }
   if (previous !== undefined && previous.slug !== current?.slug) {
     tag(blogTag(previous.slug));
+    revalidatePath(publicUrlFor(previous.slug));
   }
 
   // Tell IndexNow-consuming engines (Bing, and through it Copilot/ChatGPT

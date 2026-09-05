@@ -1,9 +1,10 @@
 import 'server-only';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, exists, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db';
 import {
+  publicPostsWhere,
   publishedSlugExists as existsWith,
   selectPostForPreview,
   selectPublishedPost,
@@ -12,6 +13,7 @@ import {
   type PublishedPostRow,
 } from '@/db/blogPredicates';
 import {
+  articleFeedback,
   blogAuthors,
   blogCategories,
   blogEntities,
@@ -103,7 +105,26 @@ export function fetchPostEntities(postId: string): Promise<BlogEntity[]> {
     .orderBy(asc(blogPostEntities.position), asc(blogEntities.name));
 }
 
-/** /admin/feedback: every post, any status. */
+/**
+ * /admin/feedback: the posts that page may be about, in any status.
+ *
+ * NOT every row, and the difference is an access boundary. `feedback` is in
+ * `DEFAULT_AREAS` and `blogs` deliberately is not, so an unfiltered read hands
+ * anybody holding the default grant a table of every draft, scheduled,
+ * archived and binned post, titles included, while /admin/blogs and the
+ * preview both bounce them. That was harmless while the corpus was 38 imported
+ * published posts; the editor is what makes drafts exist.
+ *
+ * The two arms are what the page actually needs. A PUBLISHED post gets a row
+ * whether or not anybody has voted, because the zero-vote rows double as a
+ * coverage view. Anything else appears only once it CARRIES VOTES, which keeps
+ * the documented behaviour that a post unpublished since it was voted on stays
+ * on the page, suffixed with its status and no longer linked, rather than
+ * dropping out and taking its tally with it.
+ *
+ * The vote arm is a correlated EXISTS rather than a join: a post may carry
+ * hundreds of votes and a join would return it once per row.
+ */
 export function fetchFeedbackPosts() {
   return db
     .select({
@@ -113,5 +134,16 @@ export function fetchFeedbackPosts() {
       publishedAt: blogPosts.publishedAt,
       createdAt: blogPosts.createdAt,
     })
-    .from(blogPosts);
+    .from(blogPosts)
+    .where(
+      or(
+        publicPostsWhere(),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(articleFeedback)
+            .where(eq(articleFeedback.slug, blogPosts.slug)),
+        ),
+      ),
+    );
 }

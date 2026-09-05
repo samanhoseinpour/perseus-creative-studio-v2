@@ -275,7 +275,18 @@ export const blogMediaSchema = z
   })
   .strict();
 
-const imageSourceSchema = z.discriminatedUnion('type', [
+/**
+ * What a `figure.image` may be: a self-hosted `/images/...` path, or a whole
+ * uploaded image whose every rung is pinned to OUR public Blob store.
+ *
+ * EXPORTED because the zod layer is not the only door it has to guard. The
+ * editor's clipboard rule decodes `data-image` from foreign HTML (see
+ * `blogNodeHtml.ts` and the paste guard in `blogEditorExtensions.ts`), and
+ * `json()` there can only vouch for the SHAPE of a decoded value. Restating
+ * the host pin and the path rule in that leaf would be a second copy of a
+ * security predicate; running this one is not.
+ */
+export const blogImageSourceSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('static'), src: z.string().regex(STATIC_IMAGE_PATH_RE, 'not a /images path') }).strict(),
   z.object({ type: z.literal('media'), ...blogMediaSchema.shape }).strict(),
 ]);
@@ -390,7 +401,7 @@ const rawNode: z.ZodType<RawNode> = z.lazy(() =>
       'figure',
       z
         .object({
-          image: imageSourceSchema,
+          image: blogImageSourceSchema,
           alt: shortText.min(1),
           caption: optLong,
           credit: optLong,

@@ -44,12 +44,22 @@
  * That is why no default is written twice: a codec cannot drift from the
  * schema it decodes into, because it never states one.
  *
- * THE REFUSAL. Three attributes have no usable default: a figure with no
- * image, and a youtube or instagram with no id, are documents the zod layer
- * refuses. Their rules therefore return `false` (ProseMirror reads that as
- * "this rule does not match") rather than building a node that can never be
- * saved. They are exactly the three the insert dialogs collect BEFORE the
- * node exists, for the same reason.
+ * THE REFUSAL, AND EXACTLY HOW FAR IT REACHES. Three attributes have no
+ * usable default: a figure with no image, and a youtube or instagram with no
+ * id, are documents the zod layer refuses. Their rules therefore return
+ * `false` (ProseMirror reads that as "this rule does not match") rather than
+ * building a node that can never be saved. They are exactly the three the
+ * insert dialogs collect BEFORE the node exists, for the same reason.
+ *
+ * What this file refuses is a SHAPE. Whether a decoded VALUE is one the
+ * vocabulary would accept is a separate question, and for `figure.image` the
+ * answer is a rule rather than a type: a `/images/...` path has a pattern, and
+ * an uploaded image's every rung is pinned to our own Blob store. Restating
+ * either here would put a second copy of a security predicate in a leaf, so
+ * `blogEditorExtensions.ts` runs the real `blogImageSourceSchema` over the
+ * decoded attrs and returns the same `false` through the same mechanism. Read
+ * the two together: this half says the attribute is an object, that half says
+ * it is a legal image.
  */
 
 /** The eight node names, mirrored from `CUSTOM_NODE_NAMES` in `blogBody.ts`
@@ -120,7 +130,10 @@ const count = (attr: string): AttrCodec => ({
  *  `&`, `<` and `"` on the way out and unescapes them on the way back, so the
  *  quotes JSON needs cannot break out of the attribute. Anything that is not
  *  a plain object decodes as absent, which for `figure.image` means the rule
- *  refuses (see REQUIRED below) rather than pasting an unsavable figure. */
+ *  refuses (see REQUIRED below) rather than pasting an unsavable figure. A
+ *  plain object is as far as this goes: an object of the WRONG SHAPE is
+ *  refused by the value guard in `blogEditorExtensions.ts`, which runs the
+ *  vocabulary's own schema rather than a copy of it. */
 const json = (attr: string): AttrCodec => ({
   attr,
   toAttr: (value) => (value === null || value === undefined ? null : JSON.stringify(value)),

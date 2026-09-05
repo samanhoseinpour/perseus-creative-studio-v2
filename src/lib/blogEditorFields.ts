@@ -81,6 +81,43 @@ export const BLOG_SAVE_STATE_LABELS: Record<BlogSaveState, string> = {
   failed: 'Not saved',
 };
 
+/**
+ * Whether a door sent the editor's current payload.
+ *
+ * Every explicit move rides the same mutex as autosave, but only four of them
+ * carry `fields`: Save, Publish, Schedule and the reschedule. Trash, Restore,
+ * Unpublish, Unschedule and the date amendment send a status change and
+ * nothing else, so what came back says nothing at all about the words on
+ * screen.
+ */
+export type BlogSaveCarries = 'fields' | 'no-fields';
+
+/**
+ * The saved BASELINE after a door answered ok: what the bar may now call
+ * saved, and what the leave guard compares against.
+ *
+ * A DATA-LOSS PATH, which is why it is a function here rather than a line in
+ * the hook. It used to advance unconditionally, so a door that carried no
+ * fields marked the writer's current payload saved: open a live post, add a
+ * Source row with a title and no URL (`compactPostLists` keeps a half-filled
+ * row, so every autosave is refused and the bar correctly reads "Not saved"),
+ * then Unpublish. The move succeeds, the issues clear, and the bar reads
+ * "Saved" over text the server has never seen. The Save button greys out, the
+ * field error disappears, the `beforeunload` guard goes with it, and the work
+ * is lost with the screen having said it was safe.
+ *
+ * Keeping the old baseline is the truthful answer in every other case too: a
+ * status move landed, the words did not, so the post stays unsaved and the
+ * next autosave sends them.
+ */
+export function nextSavedSnapshot(
+  carries: BlogSaveCarries,
+  sent: string,
+  saved: string,
+): string {
+  return carries === 'fields' ? sent : saved;
+}
+
 // ── What the form holds ─────────────────────────────────────────────────────
 
 export type EditorFaq = { question: string; answer: string };
@@ -416,7 +453,12 @@ export function blogEditorActions(
     schedule: can('scheduled'),
     reschedule: status === 'scheduled',
     unschedule: status === 'scheduled' && can('draft'),
-    unpublish: can('archived'),
+    // `status === 'published'` is doing real work, exactly as it is one line
+    // up. `can('archived')` is also true from the BIN for a post that was live
+    // before, because `archived` is where `restoreTarget` sends it back to, so
+    // the bare form offered Unpublish on a binned post and the door answered
+    // "This post is in Trash, so it is already off the site."
+    unpublish: status === 'published' && can('archived'),
     trash: can('trash'),
     restore: status === 'trash',
     amendDate: status === 'published',
