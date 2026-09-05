@@ -415,8 +415,13 @@ eq('canonical: fragment refused', canonicalOverrideSchema.safeParse('https://exa
 // not the parser's. Mutating it out turns this line red and nothing else.
 eq('canonical: control character refused', canonicalOverrideSchema.safeParse('https://example.com/a\u0001b').success, false);
 // The author and category records go through their own doors in
-// _actions/blogTaxonomy.ts, and `kind` and the slug shape are both closed
-// vocabularies nothing else in the suite reads, so they are pinned here.
+// _actions/blogTaxonomy.ts. `scripts/check-blogs.mts` also reads these two
+// schemas now (the editor's taxonomy dialogs), and the two files pin DIFFERENT
+// halves rather than the same one twice: over there it is the `userId` refusal
+// that keeps a byline link off the form, the required `sortIndex` the dialog
+// fills in, and the null SEO pair the `branding` row really carries. Here it is
+// the closed `kind` vocabulary and the slug SHAPE, which is this file's own
+// subject.
 const authorFields = {
   slug: 'saman-hoseinpour', name: 'Saman Hoseinpour', kind: 'person', role: 'Founder', bio: 'b',
   imageStaticPath: null, ogImageStaticPath: null, sameAs: ['https://www.linkedin.com/in/x'],
@@ -563,7 +568,17 @@ if (!process.argv.includes('--db')) {
 /* ── 7. The Postgres round trip (--db) ───────────────────────────────── */
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
-const PREFIX = 'zz-check-';
+/**
+ * This file's OWN fixture prefix, and it is deliberately not `zz-check-`.
+ *
+ * Both blog check scripts used that one, and both seeded the same two slugs
+ * (`…author`, `…cat`) on UNIQUE columns. So a concurrent `--db` pass was not
+ * merely two sweeps racing: each script's `like('zz-check-%')` delete removes
+ * the other's rows wholesale, `check-blogs.mts` ends on "no zz-check- rows
+ * remain", and a failure there names whichever script happened to finish
+ * second. Two prefixes make the two independent, in any order.
+ */
+const PREFIX = 'zz-body-';
 const sweep = async () => {
   await db.delete(blogPosts).where(like(blogPosts.slug, `${PREFIX}%`));
   await db.delete(blogAuthors).where(eqCol(blogAuthors.slug, `${PREFIX}author`));
@@ -581,23 +596,23 @@ const pgRefusal = (error: unknown): { code?: string; constraint?: string } => {
 };
 try {
   await sweep();
-  const [author] = await db.insert(blogAuthors).values({ slug: `${PREFIX}author`, name: 'ZZ-CHECK', role: 'r', bio: 'b', sortIndex: 999 }).returning();
-  const [cat] = await db.insert(blogCategories).values({ slug: `${PREFIX}cat`, title: 'ZZ-CHECK', sortIndex: 999 }).returning();
+  const [author] = await db.insert(blogAuthors).values({ slug: `${PREFIX}author`, name: 'ZZ-BODY', role: 'r', bio: 'b', sortIndex: 999 }).returning();
+  const [cat] = await db.insert(blogCategories).values({ slug: `${PREFIX}cat`, title: 'ZZ-BODY', sortIndex: 999 }).returning();
   const day = dayNoonIn(STUDIO_TZ, '2026-05-18');
   // The scheduled fixture's firing instant. Far future so it can never read as
   // a date anything real happened on.
   const scheduleAt = dayNoonIn(STUDIO_TZ, '2999-01-01');
-  const body = { type: 'doc', content: [p('ZZ-CHECK body')] } as BlogDoc;
+  const body = { type: 'doc', content: [p('ZZ-BODY body')] } as BlogDoc;
   const snapshotFor = (title: string, slug: string) => ({
     slug, title, description: 'd', categorySlug: cat.slug, authorSlug: author.slug, serviceSlug: null,
     hero: { staticPath: '/images/blogs/production/x.avif', media: null, alt: 'a', caption: null },
-    body, bodyText: 'ZZ-CHECK body', wordCount: 2, keyTakeaways: [], faqs: [], sources: [], entities: [], relatedSlugs: [],
+    body, bodyText: 'ZZ-BODY body', wordCount: 2, keyTakeaways: [], faqs: [], sources: [], entities: [], relatedSlugs: [],
     seo: { title: 't', description: 'd', canonicalOverride: null, ogTitle: 't', ogDescription: 'd', ogImage: null, twitterCard: 'summary_large_image', robotsIndex: true, robotsFollow: true, robotsExtra: null, focusKeywords: [], emitLegacyMetaKeywords: false },
     customSchema: null, llmsInclude: true, publishedAt: day.toISOString(), contentModifiedAt: null,
   });
   /* One working row plus its published revision 1. `extra` pins a created_at
      or an id for the comparator fixtures below. */
-  const seed = async (slug: string, status: typeof blogPosts.$inferInsert.status, legacyId: number | null, title = `ZZ-CHECK ${slug} rev`, extra: { id?: string; createdAt?: Date } = {}) => {
+  const seed = async (slug: string, status: typeof blogPosts.$inferInsert.status, legacyId: number | null, title = `ZZ-BODY ${slug} rev`, extra: { id?: string; createdAt?: Date } = {}) => {
     /* A `scheduled` row must carry BOTH halves of its schedule
        (blog_posts_schedule_stamp), and the revision it points at cannot exist
        before the post does. So the scheduled fixture is born a draft and the
@@ -607,7 +622,7 @@ try {
     const [post] = await db.insert(blogPosts).values({
       ...extra,
       slug, legacyId, title: `${title} WORKING`, description: 'd', categoryId: cat.id, authorId: author.id,
-      heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'a', body, bodyText: 'ZZ-CHECK body', wordCount: 2,
+      heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'a', body, bodyText: 'ZZ-BODY body', wordCount: 2,
       seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd', status: scheduled ? 'draft' : status, publishedAt: day,
       trashedAt: status === 'trash' ? new Date() : null,
     }).returning();
@@ -641,8 +656,8 @@ try {
   // A second, UNPUBLISHED revision of a (published_revision_id still names
   // revision 1): the join must read the pointer, not every revision.
   await db.insert(blogPostRevisions).values({
-    postId: aId, number: 2, reason: 'save', slug: `${PREFIX}a`, title: `ZZ-CHECK ${PREFIX}a rev rev2`, categoryId: cat.id, authorId: author.id,
-    publishedAt: day, contentModifiedAt: null, wordCount: 2, snapshot: snapshotFor(`ZZ-CHECK ${PREFIX}a rev rev2`, `${PREFIX}a`),
+    postId: aId, number: 2, reason: 'save', slug: `${PREFIX}a`, title: `ZZ-BODY ${PREFIX}a rev rev2`, categoryId: cat.id, authorId: author.id,
+    publishedAt: day, contentModifiedAt: null, wordCount: 2, snapshot: snapshotFor(`ZZ-BODY ${PREFIX}a rev rev2`, `${PREFIX}a`),
   });
   // b's published revision carries a typed slug copy that DISAGREES with its
   // working row: the URL identity is the working row's slug, everywhere.
@@ -653,8 +668,8 @@ try {
   eq('db: predicate returns only published, once each, in publicOrder', rows.map((r) => r.slug), PUBLIC_ORDER);
   eq('db: the join reads published_revision_id, not every revision', rows.filter((r) => r.slug === `${PREFIX}a`).map((r) => r.revision.number), [1]);
   eq('db: NULL legacy_id sorts after a same-day legacy post', rows[0].legacyId, 1000);
-  eq('db: title comes from the published REVISION, not the working row', rows[0].revision.title, `ZZ-CHECK ${PREFIX}a rev`);
-  eq('db: snapshot round-trips as an object (its title is readable)', rows[0].revision.snapshot.title, `ZZ-CHECK ${PREFIX}a rev`);
+  eq('db: title comes from the published REVISION, not the working row', rows[0].revision.title, `ZZ-BODY ${PREFIX}a rev`);
+  eq('db: snapshot round-trips as an object (its title is readable)', rows[0].revision.snapshot.title, `ZZ-BODY ${PREFIX}a rev`);
   eq('db: the row slug is the WORKING slug, not the revision copy', [rows[1].slug, rows[1].revision.slug], [`${PREFIX}b`, `${PREFIX}b-typed-copy`]);
   eq('db: publishedSlugExists true for published', await publishedSlugExists(db, `${PREFIX}a`), true);
   eq('db: publishedSlugExists false for draft', await publishedSlugExists(db, `${PREFIX}c`), false);

@@ -2,6 +2,12 @@
  * Blog editor self-check — the post-state leaf, executable.
  *
  * Run:  node --import tsx scripts/check-blogs.mts    (no DB, no env, no network)
+ *       node --env-file=.env.local --import tsx scripts/check-blogs.mts --db
+ *
+ * The `--db` pass seeds `zz-check-`-prefixed fixtures into the one Neon
+ * database (production, preview and local development at once) and sweeps them
+ * in a `finally`. `scripts/check-blog-body.mts --db` uses its own `zz-body-`
+ * prefix, so the two are independent and may be run in either order.
  *
  * src/lib/blogFields.ts decides everything the editor knows about a post's
  * STATE, and every mistake it can make is silent on screen:
@@ -29,10 +35,37 @@
  *    scheduler fires at. Wrong, and a post goes live on the right day at the
  *    wrong hour, or on the wrong day entirely.
  *
- * Every assertion here has been mutation-tested: the function was broken
- * deliberately and the assertion went red. An assertion that stays green
- * under its own mutation is a comment, not a check, and this repo deletes
- * those.
+ * MUTATION TESTING, AND WHAT THE CLAIM COVERS. The rule is an obligation, not
+ * a boast: AN ASSERTION ADDED OR CHANGED HERE IS MUTATION-TESTED BEFORE IT
+ * SHIPS. Break the thing it claims to pin, watch this file go red, put it
+ * back. An assertion that stays green under its own mutation is a comment, not
+ * a check, and this repo deletes those.
+ *
+ * It is written that way because the blanket version that used to stand here
+ * ("every assertion in this file has been mutation-tested") was not true. A
+ * review on 2026-09-05 found assertions that could not go red at all: one
+ * compared two FALLBACK values against two literals, one filtered a total
+ * function for a value it cannot return, one passed for a cap of 1, and the
+ * hazard the schema section leads with was asserted nowhere. Every one of
+ * those is fixed, and each is now pinned by a mutation that was run. The claim
+ * covers those, every helper this file leans on, and everything added since;
+ * it is not a certificate over all 1900-odd lines, and stating it as one is
+ * what let the gaps sit.
+ *
+ * Three shapes account for all of them, and recognising the shape is worth
+ * more than the instances:
+ *
+ *  - A HELPER THAT DEGRADES TO A PASSING VALUE. `?? ''` hands every negative
+ *    assertion an empty string to be satisfied by; a `?? 'wide'` cannot tell
+ *    "explicitly wide" from "no attribute" from "the component was renamed";
+ *    a bare try/catch reads a TypeError from a typo as the refusal working.
+ *    `region`, `taxNamed`, `fnNamed`, `widthPassed` and `refuses` each answer
+ *    with a drift guard for that reason.
+ *  - A DETECTOR AIMED AT ONE HARDCODED SPELLING, where a recursive sweep over
+ *    the tree already exists in this file. Every one of those is exercised on
+ *    known-bad inputs beside itself, so a sweep matching nothing cannot pass
+ *    for a tree with nothing to find.
+ *  - A HAND-WRITTEN LIST where a runtime vocabulary was available.
  *
  * Later tasks in this programme append their own sections to this file.
  */
@@ -222,15 +255,22 @@ const eq = (label: string, got: unknown, want: unknown) => {
   );
 };
 const ok = (label: string, cond: boolean) => eq(label, cond, true);
-/** Whether a synchronous call refused. Used where the refusal IS the
- *  behaviour: an override nobody applied looks exactly like a feature nobody
- *  wrote, so `overrideByName` throws rather than shrugging. */
-const refuses = (fn: () => unknown): boolean => {
+/** Whether a synchronous call refused, AND refused for the reason named.
+ *
+ *  Used where the refusal IS the behaviour: an override nobody applied looks
+ *  exactly like a feature nobody wrote, so `overrideByName` throws rather than
+ *  shrugging. `because` is REQUIRED, and that is the whole point of it: a bare
+ *  try/catch returns true for any throw at all, so a `TypeError` from a typo
+ *  in the call under test reads as the refusal working. That is the
+ *  degrades-to-a-pass shape, and it is the one a refusal assertion is least
+ *  able to survive, because the assertion's evidence is that something went
+ *  wrong. */
+const refuses = (fn: () => unknown, because: string): boolean => {
   try {
     fn();
     return false;
-  } catch {
-    return true;
+  } catch (error) {
+    return error instanceof Error && error.message.includes(because);
   }
 };
 
@@ -520,6 +560,39 @@ const SEO_EDITS: readonly Edit[] = [
   // leaving it out means the day a renderer lands, a schema edit pings nothing.
   ['customSchema', (s) => void (s.customSchema = { '@type': 'HowTo', name: 'Book a shoot' })],
 ];
+
+// Every top-level field of the snapshot is claimed by one of the groups, swept
+// from the FIXTURE'S OWN KEYS rather than counted by eye. Both edit lists are
+// hand-written, so a field added to `BlogSnapshotView` later is tested by
+// neither fingerprint and both mistakes it can then make are silent: an SEO
+// field that moves `content_modified_at` rewrites the lastmod of every post it
+// touches, and an article field that moves neither means an edit nobody pings
+// for. `BASE` is typed as the view, so `tsc` supplies the other half of this:
+// a new required field cannot be missing from the fixture.
+{
+  const EXCLUDED = ['wordCount', 'bodyText', 'llmsInclude'];
+  const claimed = new Set([
+    ...CONTENT_EDITS.map(([label]) => label.split('.')[0]),
+    ...SEO_EDITS.map(([label]) => label.split('.')[0]),
+    ...EXCLUDED,
+  ]);
+  eq(
+    'every snapshot field is claimed by one of the fingerprint groups',
+    Object.keys(BASE).filter((key) => !claimed.has(key)).sort(),
+    [],
+  );
+  // And the other direction, or an exclusion could outlive the field it names
+  // while still looking like coverage. The three excluded ones are derived or
+  // not yet served, and each has its own assertion further down; they are not
+  // on `BASE`, so they are checked against the view type instead.
+  eq(
+    'and no group claims a field the snapshot does not have',
+    [...claimed].filter(
+      (key) => !(key in BASE) && !EXCLUDED.includes(key),
+    ).sort(),
+    [],
+  );
+}
 
 for (const [label, fn] of CONTENT_EDITS) {
   const next = mutated(fn);
@@ -1888,10 +1961,126 @@ ok('read the blog taxonomy actions (drift guard)', TAXONOMY_SRC.length > 2000);
 ok('read src/lib/blogInvalidate.ts (drift guard)', INVALIDATE_SRC.length > 2000);
 ok('read src/lib/blogFields.ts (drift guard)', FIELDS_SRC.length > 2000);
 
-const stripComments = (src: string) =>
-  src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+/**
+ * Source with its comments removed.
+ *
+ * SCANNED rather than matched, and that is a correctness difference rather
+ * than a tidy one. The regex this replaced matched a `//` whose preceding
+ * character was anything but a colon, so it guarded `https://` and nothing
+ * else. It therefore read the `//` at the end of
+ * `/^https?:\/\//i.test(src)` as the start of a comment and deleted the rest
+ * of that line: the character before it is a backslash, not a colon. Every
+ * "does not contain" sweep in this file then passes on whatever was deleted,
+ * and a sweep that matches nothing looks exactly like a tree with nothing to
+ * find. `src/lib/blogJsonLd.ts` really carries that line, twice, and the two
+ * whole-tree sweeps in section 15 strip it.
+ *
+ * The scanner steps over strings and template literals (escapes honoured,
+ * `${…}` tracked so a nested template cannot end the outer one early), so a
+ * `//` inside any of them survives. It does NOT parse regex literals; instead
+ * a `//` preceded by a backslash is never a comment, which is the only shape a
+ * regex can produce. Both rules are pinned below on known-bad inputs, because
+ * a stripper that quietly eats code is the one bug this whole file inherits.
+ *
+ * A block comment is removed WITHOUT keeping its newlines, exactly as the
+ * regex did: `linesWith` reads the stripped source, so changing the line count
+ * under it would move every assertion that counts lines.
+ */
+const stripComments = (src: string) => {
+  /** The index of the backtick that closes the template opened at `open`. */
+  const templateEnd = (open: number): number => {
+    let depth = 0;
+    for (let j = open + 1; j < src.length; j++) {
+      const ch = src[j];
+      if (ch === '\\') j++;
+      else if (ch === '`') {
+        if (depth === 0) return j;
+        j = templateEnd(j);
+      } else if (ch === '$' && src[j + 1] === '{') {
+        depth++;
+        j++;
+      } else if (depth > 0 && ch === '{') depth++;
+      else if (depth > 0 && ch === '}') depth--;
+    }
+    return src.length - 1;
+  };
+
+  let out = '';
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    const next = src[i + 1];
+    if (c === '/' && next === '*') {
+      const close = src.indexOf('*/', i + 2);
+      i = close === -1 ? src.length : close + 1;
+      continue;
+    }
+    // Never after a backslash: that is a regex's escaped slash meeting its
+    // terminator, not a comment.
+    if (c === '/' && next === '/' && src[i - 1] !== ':' && src[i - 1] !== '\\') {
+      while (i < src.length && src[i] !== '\n') i++;
+      i--;
+      continue;
+    }
+    if (c === "'" || c === '"') {
+      // Bounded by the line, so an apostrophe in JSX text costs one line of
+      // over-retention rather than eating the rest of the file.
+      out += c;
+      for (i++; i < src.length && src[i] !== '\n'; i++) {
+        out += src[i];
+        if (src[i] === '\\') {
+          out += src[i + 1] ?? '';
+          i++;
+        } else if (src[i] === c) break;
+      }
+      if (src[i] === '\n') out += '\n';
+      continue;
+    }
+    if (c === '`') {
+      const close = templateEnd(i);
+      out += src.slice(i, close + 1);
+      i = close;
+      continue;
+    }
+    out += c;
+  }
+  return out;
+};
 
 const occurrences = (hay: string, needle: string) => hay.split(needle).length - 1;
+
+// The stripper, on the inputs that decide whether every sweep below is worth
+// anything. Written as one table because each row is a different way a `//`
+// reaches source without being a comment, and the regex form got two of them
+// wrong.
+eq(
+  'stripComments removes comments and nothing else',
+  [
+    stripComments('const a = 1; // gone\nconst b = 2;'),
+    stripComments('const a = /* gone */ 1;'),
+    // The one that was broken: a regex whose escaped slash meets its own
+    // terminator. `.test(src)` used to vanish with it.
+    stripComments("return /^https?:\\/\\//i.test(src) ? src : other(src);"),
+    stripComments(".replace(/\\//g, '_')"),
+    // A URL keeps its slashes whether it is bare or quoted.
+    stripComments("const u = 'https://example.com/a';"),
+    // And a `//` inside a string is data, not a comment.
+    stripComments("if (s.startsWith('//')) return null;"),
+    stripComments('const t = `a // b ${x} c`;'),
+    // A nested template must not end the outer one early, or everything after
+    // it reads as code and its comments are stripped out of a string.
+    stripComments('const t = `${cn(`x // y`)} // z`;'),
+  ],
+  [
+    'const a = 1; \nconst b = 2;',
+    'const a =  1;',
+    'return /^https?:\\/\\//i.test(src) ? src : other(src);',
+    ".replace(/\\//g, '_')",
+    "const u = 'https://example.com/a';",
+    "if (s.startsWith('//')) return null;",
+    'const t = `a // b ${x} c`;',
+    'const t = `${cn(`x // y`)} // z`;',
+  ],
+);
 
 /**
  * How many times a WHOLE word appears, which is the only honest way to count a
@@ -1917,12 +2106,21 @@ const linesWith = (code: string, needle: string) =>
 
 /** The source between two literal markers, with its own drift guard so a
  *  renamed function fails here instead of silently emptying every assertion
- *  that reads the slice. */
+ *  that reads the slice.
+ *
+ *  The START marker must also be UNIQUE, because `indexOf` silently takes the
+ *  first one: `{Array.from({ length: 6 }).map((_, i) => (` appears three times
+ *  in `AdminSkeletons.tsx`, and the blog one was the first only by the order
+ *  the file happens to be written in. A second occurrence means the slice may
+ *  belong to some other surface, and every assertion over it would then be
+ *  about the wrong screen while still reading green. The END marker is free to
+ *  repeat: it is searched from the start, so the nearest one is the right one. */
 function region(source: string, from: string, to: string, label: string): string {
   const start = source.indexOf(from);
   const end = to === '' ? source.length : source.indexOf(to, start + from.length);
   const found = start >= 0 && end > start;
   ok(`found ${label} in its file (drift guard)`, found);
+  ok(`and ${label}'s start marker is unique in that file`, occurrences(source, from) === 1);
   return found ? source.slice(start, end) : '';
 }
 
@@ -2299,7 +2497,19 @@ const FN_SLICES: { name: string; exported: boolean; code: string }[] = (() => {
     code: stripComments(ACTIONS_SRC.slice(head.at, heads[i + 1]?.at ?? ACTIONS_SRC.length)),
   }));
 })();
-const fnNamed = (name: string) => FN_SLICES.find((fn) => fn.name === name)?.code ?? '';
+/** One door's source, WITH the drift guard a `?? ''` fallback silently
+ *  removes: a renamed function would otherwise hand every negative assertion
+ *  an empty string to be satisfied by. Emitted once per NAME, because several
+ *  of these are read more than once and one fact does not want six lines. */
+const fnGuarded = new Set<string>();
+const fnNamed = (name: string) => {
+  const found = FN_SLICES.find((fn) => fn.name === name);
+  if (!fnGuarded.has(name)) {
+    fnGuarded.add(name);
+    ok(`the actions sweep found ${name} (drift guard)`, (found?.code.length ?? 0) > 60);
+  }
+  return found?.code ?? '';
+};
 // Fixture guards: an empty or truncated sweep would make every assertion built
 // on it vacuously true.
 ok('found every function in the actions file (fixture guard)', FN_SLICES.length >= 18);
@@ -2308,9 +2518,13 @@ eq(
   FN_SLICES.filter((fn) => fn.exported).length,
   occurrences(ACTIONS_CODE, 'export async function'),
 );
-for (const name of ['createPost', 'saveDraft', 'savePost', 'publishPost', 'restorePost'] as const) {
-  ok(`the sweep found ${name} (fixture guard)`, fnNamed(name).length > 200);
-}
+eq(
+  'and the five main doors are among them (fixture guard)',
+  ['createPost', 'saveDraft', 'savePost', 'publishPost', 'restorePost'].filter(
+    (name) => !FN_SLICES.some((fn) => fn.exported && fn.name === name),
+  ),
+  [],
+);
 
 // The count above says the gate is THERE; it cannot say it runs first. Moving
 // it inside a try swallows requireArea's redirect into reportError and hands a
@@ -4180,7 +4394,27 @@ function taxonomySlices(source: string) {
   }));
 }
 const TAX_SLICES = taxonomySlices(TAXONOMY_SRC);
-const taxNamed = (name: string) => TAX_SLICES.find((fn) => fn.name === name)?.code ?? '';
+/**
+ * One function's source, WITH the drift guard `region` has and this used to
+ * lack: it was `find(...)?.code ?? ''`, which degrades to a passing value.
+ * Every negative assertion over a renamed function then reads green over an
+ * empty string — `!taxNamed('authorColumns').includes('userId')` is exactly
+ * that, and `authorColumns` is not one of the six doors the loop below guards,
+ * so nothing anywhere would have noticed the slice going missing.
+ *
+ * The guard is emitted once per NAME rather than once per call: several of
+ * these are read six times over, and six identical lines would be noise
+ * standing in for one fact.
+ */
+const taxGuarded = new Set<string>();
+const taxNamed = (name: string) => {
+  const found = TAX_SLICES.find((fn) => fn.name === name);
+  if (!taxGuarded.has(name)) {
+    taxGuarded.add(name);
+    ok(`the taxonomy sweep found ${name} (drift guard)`, (found?.code.length ?? 0) > 60);
+  }
+  return found?.code ?? '';
+};
 
 const TAXONOMY_DOORS = [
   'createAuthor',
@@ -4195,9 +4429,13 @@ eq(
   TAX_SLICES.filter((fn) => fn.exported).map((fn) => fn.name).sort(),
   [...TAXONOMY_DOORS].sort(),
 );
-for (const name of TAXONOMY_DOORS) {
-  ok(`the sweep found ${name} (fixture guard)`, taxNamed(name).length > 200);
-}
+// `taxNamed` guards the LENGTH of whatever it is asked for; this is the other
+// half, that the six are EXPORTED, which a length check cannot say.
+eq(
+  'and all six are exported (fixture guard)',
+  TAXONOMY_DOORS.filter((name) => !TAX_SLICES.some((fn) => fn.exported && fn.name === name)),
+  [],
+);
 
 // A CONSISTENCY assertion, not a safety one: `.returning()` on a statement that
 // did not throw always yields a row, so none of these four guards can fire.
@@ -4821,11 +5059,24 @@ const LEAF_SRC = readRepoFile('../src/lib/blogListFields.ts');
 // The skeleton's own copy lives in one function, and only that function's copy
 // is this screen's. Sliced BEFORE the em-dash sweep for that reason: the rest
 // of AdminSkeletons belongs to twenty-eight other routes.
+// It ends at the NEXT skeleton, not at the next one this feature happens to
+// care about: `SubmissionDetailSkeleton` is three functions further down, so
+// the slice used to carry `BlogEditorSkeleton` and `BlogRevisionsSkeleton`
+// too. Nothing said so, and the header-control region below then had two
+// `action={` to choose from and took the first by luck of declaration order.
 const BLOGS_SKELETON = region(
   SKELETONS_SRC,
   'export function BlogsListSkeleton(',
-  'export function SubmissionDetailSkeleton(',
+  'export function BlogEditorSkeleton(',
   'BlogsListSkeleton',
+);
+// The slice really is ONE function. `region` cannot know where a function
+// ends, so this is what says the end marker names the next declaration rather
+// than one somewhere past it.
+eq(
+  'and that slice holds exactly one skeleton',
+  occurrences(BLOGS_SKELETON, 'export function '),
+  1,
 );
 
 const LIST_SCREEN_FILES = [
@@ -4848,12 +5099,30 @@ ok('read AdminSkeletons.tsx (drift guard)', SKELETONS_SRC.length > 2000);
 // Admin copy carries no em dash: members read this dashboard daily and it is
 // the most recognisable machine-writing tell. The ONE allowance is the empty
 // value glyph in a cell, which is a spreadsheet convention rather than prose,
-// so it is removed by its exact form before the sweep.
+// so it is removed by its EXACT form before the sweep.
+//
+// Exact, and there was a second, looser copy of this rule further down the
+// file (`/>\s*—\s*</`) that this now replaces. Tolerating whitespace around
+// the glyph exempts `</Chip> — <Chip>`, which is an em dash used as ordinary
+// sentence punctuation between two inline elements and the commonest shape
+// the rule exists to forbid. One door, so the two spellings cannot disagree
+// about what the exemption covers.
 const EMPTY_CELL_GLYPH = /(?:'—'|>—<)/g;
+const withoutEmptyGlyph = (code: string) => code.replace(EMPTY_CELL_GLYPH, '');
+eq(
+  'the glyph exemption covers a lone cell glyph and nothing else',
+  [
+    '<span aria-hidden="true">—</span>',
+    "value ?? '—'",
+    '</Chip> — <Chip>',
+    '<p>Saved — for now</p>',
+  ].map((sample) => withoutEmptyGlyph(sample).includes('—')),
+  [false, false, true, true],
+);
 for (const [label, src] of LIST_SCREEN_FILES) {
   eq(
     `no em dash in ${label} outside the empty-cell glyph`,
-    stripComments(src).replace(EMPTY_CELL_GLYPH, '').includes('—'),
+    withoutEmptyGlyph(stripComments(src)).includes('—'),
     false,
   );
 }
@@ -4918,16 +5187,24 @@ ok(
 
 // Next prefetches every in-viewport Link, so twenty-five row titles pointing at
 // the editor would fire twenty-five RSC requests for a route nobody opened —
-// the reason the calendar's day chips carry the same flag. Counted in pairs, so
-// a second editor link added without it fails here too.
-eq(
-  'every editor link on a row carries prefetch={false}',
-  [
-    occurrences(LIST_SRC, 'href={`/admin/blogs/${item.id}`}'),
-    occurrences(LIST_SRC, 'prefetch={false}'),
-  ],
-  [1, 1],
-);
+// the reason the calendar's day chips carry the same flag.
+//
+// Read as CO-LOCATION, inside one opening tag, rather than as two tallies over
+// the file. `BlogsList.tsx` has a second `<Link>` (the empty state's "Clear
+// filters"), so moving `prefetch={false}` onto that one leaves both counts at
+// one while all twenty-five row titles prefetch again, which is the whole
+// defect wearing the assertion's own shape.
+{
+  const opens = [...LIST_SRC.matchAll(/<Link\b[^>]*>/g)].map((match) => match[0]);
+  ok('found the links to scan (fixture guard)', opens.length >= 2);
+  const toEditor = opens.filter((tag) => tag.includes('/admin/blogs/${item.id}'));
+  eq('exactly one link on a row opens the editor', toEditor.length, 1);
+  eq(
+    'and it carries prefetch={false} in its own tag',
+    toEditor.filter((tag) => !tag.includes('prefetch={false}')),
+    [],
+  );
+}
 
 // The other half of the same rule, in the file that calls the door: the toast
 // is worded from the ANSWER, never from the request. `${ids.length}` in a
@@ -4952,25 +5229,121 @@ for (const [label, src] of [
   eq(`${label} constructs no Date in the browser`, occurrences(stripComments(src), 'new Date('), 0);
 }
 
-// The skeleton and the page must pass AdminPage the SAME width token, or
-// loading.tsx renders at one measure and the page snaps to another on swap.
-// Both take the default here, so the two defaults are READ rather than
-// assumed, and the Shell one is read from Shell's own region: over the whole
-// file the pattern holds today only because there happens to be one
-// occurrence of it.
+// The skeleton and the page must pass AdminPage the SAME width, or loading.tsx
+// renders at one measure and the page snaps to another on swap.
+//
+// Read as a SWEEP over the route tree rather than as one hand-picked pair, and
+// the previous version of this is why. It compared `widthPassed(page)` against
+// `widthPassed(skeleton)` through a helper that FELL BACK to `'wide'` when its
+// regex missed, and neither file passes a width at all: it compared two
+// fallbacks against two literals and could not tell "explicitly wide" from "no
+// attribute" from "the component was renamed". The route it would actually
+// have caught, `/admin/blogs/new`, was not in it.
 const SKELETON_SHELL = region(SKELETONS_SRC, 'function Shell({', '\n/**', 'the skeleton Shell');
-// Both patterns tolerate ANY attribute order. `<AdminPage width="…">` alone
-// would let `<AdminPage role="x" width="table">` fall through to the default
-// below and stay green, which is the one shape the assertion exists to catch.
-const widthPassed = (code: string, tag: string): string =>
-  code.match(new RegExp(`<${tag}[^>]*\\swidth="(\\w+)"`))?.[1] ?? 'wide';
-ok("AdminPage's own default width is 'wide'", /width = 'wide'/.test(ADMINPAGE_SRC));
-ok("the skeleton Shell's default width is 'wide'", /width = 'wide'/.test(SKELETON_SHELL));
+const NO_DEFAULT_WIDTH = '(no default)';
+const defaultWidth = (code: string) => code.match(/width = '(\w+)'/)?.[1] ?? NO_DEFAULT_WIDTH;
+eq("AdminPage's own default width", defaultWidth(ADMINPAGE_SRC), 'wide');
+eq("the skeleton Shell's default width", defaultWidth(SKELETON_SHELL), 'wide');
+
+/**
+ * The width a `<Tag …>` was given, resolved through that component's own
+ * default, with a MISSING TAG reported as itself.
+ *
+ * A helper that answers with the default when it finds nothing degrades to a
+ * passing value, which is the shape this whole round is about: it reads a
+ * renamed component, a deleted element and a deliberate `width="wide"` as the
+ * same answer. The attribute pattern tolerates any attribute ORDER, because
+ * `<AdminPage role="x" width="table">` falling through to the default is the
+ * one shape the assertion exists to catch.
+ */
+const widthPassed = (code: string, tag: string, fallback: string): string => {
+  const open = code.match(new RegExp(`<${tag}(\\s[^>]*)?>`));
+  if (!open) return `(no <${tag}>)`;
+  return open[1]?.match(/\swidth="(\w+)"/)?.[1] ?? fallback;
+};
+// The helper itself, on the four answers it has to keep apart.
 eq(
-  'the posts page and BlogsListSkeleton pass the same AdminPage width',
-  [widthPassed(BLOGS_PAGE_SRC, 'AdminPage'), widthPassed(BLOGS_SKELETON, 'Shell')],
-  ['wide', 'wide'],
+  'widthPassed tells explicit from default from absent',
+  [
+    widthPassed('<AdminPage width="table">', 'AdminPage', 'wide'),
+    widthPassed('<AdminPage role="x" width="table">', 'AdminPage', 'wide'),
+    widthPassed('<AdminPage>', 'AdminPage', 'wide'),
+    widthPassed('<Renamed width="table">', 'AdminPage', 'wide'),
+  ],
+  ['table', 'table', 'wide', '(no <AdminPage>)'],
 );
+
+// Every route under /admin/blogs, against the skeleton Next actually shows
+// while it loads: `loading.tsx` governs its whole subtree, so a route with
+// none of its own inherits the nearest ancestor's.
+{
+  const routeRoot = new URL('../src/app/(admin)/admin/(protected)/blogs/', import.meta.url);
+  const routeFiles = readdirSync(routeRoot, { recursive: true })
+    .map((entry) => String(entry).replaceAll('\\', '/'))
+    .filter((entry) => /\.tsx$/.test(entry))
+    .sort();
+  // A short read would make the sweep below trivially true.
+  eq('the blogs route tree is these files and no others', routeFiles, [
+    '[id]/loading.tsx',
+    '[id]/page.tsx',
+    '[id]/revisions/loading.tsx',
+    '[id]/revisions/page.tsx',
+    'loading.tsx',
+    'new/page.tsx',
+    'page.tsx',
+  ]);
+  const dirOf = (file: string) => (file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '');
+  const loadingDirs = new Set(
+    routeFiles.filter((file) => /(^|\/)loading\.tsx$/.test(file)).map(dirOf),
+  );
+  /** The loading.tsx Next would render for a page, walking up as Next does. */
+  const governingLoading = (dir: string): string => {
+    for (let at = dir; ; at = at.includes('/') ? at.slice(0, at.lastIndexOf('/')) : '') {
+      if (loadingDirs.has(at)) return at === '' ? 'loading.tsx' : `${at}/loading.tsx`;
+      if (at === '') return '(none)';
+    }
+  };
+
+  const pairs = routeFiles
+    .filter((file) => /(^|\/)page\.tsx$/.test(file))
+    .map((file) => {
+      const dir = dirOf(file);
+      const pageSrc = readRepoFile(`../src/app/(admin)/admin/(protected)/blogs/${file}`);
+      const loading = governingLoading(dir);
+      const loadingSrc =
+        loading === '(none)'
+          ? ''
+          : readRepoFile(`../src/app/(admin)/admin/(protected)/blogs/${loading}`);
+      const skeleton = loadingSrc.match(/<(\w+Skeleton)\b/)?.[1] ?? '(no skeleton)';
+      const slice =
+        skeleton === '(no skeleton)'
+          ? ''
+          : region(SKELETONS_SRC, `export function ${skeleton}(`, '\nexport function ', skeleton);
+      return [
+        `/admin/blogs${dir === '' ? '' : `/${dir}`}`,
+        widthPassed(pageSrc, 'AdminPage', defaultWidth(ADMINPAGE_SRC)),
+        skeleton,
+        widthPassed(slice, 'Shell', defaultWidth(SKELETON_SHELL)),
+      ];
+    })
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  eq(
+    'every blogs route and the skeleton its loading.tsx shows agree on a width',
+    pairs,
+    [
+      ['/admin/blogs', 'wide', 'BlogsListSkeleton', 'wide'],
+      ['/admin/blogs/[id]', 'wide', 'BlogEditorSkeleton', 'wide'],
+      ['/admin/blogs/[id]/revisions', 'wide', 'BlogRevisionsSkeleton', 'wide'],
+      // The one asymmetry, and it is stated rather than made to agree.
+      // `/admin/blogs/new` has no loading.tsx of its own, so Next shows the
+      // LIST's while it runs. Widening the page to match would be fixing the
+      // wrong thing: the route mints a draft and redirects, so its own render
+      // is reached ONLY when the create was refused, and a list skeleton over
+      // an empty state is the wrong SHAPE long before it is the wrong width.
+      ['/admin/blogs/new', 'narrow', 'BlogsListSkeleton', 'wide'],
+    ],
+  );
+}
 
 // The header now carries three unconditional controls, and the skeleton has to
 // reserve all three: one pill under a header that renders three leaves the row
@@ -5024,7 +5397,7 @@ for (const [label, src] of TAXONOMY_FILES) {
 for (const [label, src] of TAXONOMY_FILES) {
   eq(
     `no em dash in ${label} outside the empty-cell glyph`,
-    stripComments(src).replace(EMPTY_CELL_GLYPH, '').includes('—'),
+    withoutEmptyGlyph(stripComments(src)).includes('—'),
     false,
   );
   eq(`${label} constructs no Date in the browser`, occurrences(stripComments(src), 'new Date('), 0);
@@ -5348,6 +5721,52 @@ eq(
   ],
 );
 ok('and the link mark still ranks first, which decides how nested marks render', editorSchema.marks.link.rank === 0);
+
+// THE HAZARD THIS SECTION LEADS WITH, and it was named in the header and
+// asserted nowhere. `blogBody.ts` passes `link: false` to StarterKit so that
+// `BlogLink` is the only link mark: @tiptap/extension-link declares `target`,
+// `rel` and `class` with defaults that `getJSON()` materialises, and the
+// strict zod layer refuses every one of them, so a writer meets it as an
+// opaque path error on every save.
+//
+// It CANNOT be caught by comparing the two schemas, and that is the point: the
+// editor's list is derived from `EXTENSIONS`, so removing `link: false`
+// widens BOTH sides identically and every parity assertion above stays green.
+// So it is pinned as a LITERAL, on both schemas, and the rank guard above does
+// not cover it either (the authors closed this for mark rank and not for
+// attributes).
+for (const [label, schema] of [
+  ['the renderer', blogSchema],
+  ['the editor', editorSchema],
+] as const) {
+  eq(
+    `${label}'s link mark declares href and nothing else`,
+    attrPairs(schema.marks.link.spec.attrs),
+    [['href', 'null']],
+  );
+}
+// And the strict layer really would refuse the attributes StarterKit's link
+// brings, so the line above is guarding a live refusal rather than a taste.
+ok(
+  'and a link carrying target/rel/class is refused by the body validator',
+  !validateBlogBody({
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'x',
+            marks: [
+              { type: 'link', attrs: { href: '/blogs/a', target: '_blank', rel: 'noopener', class: null } },
+            ],
+          },
+        ],
+      },
+    ],
+  } as BlogDoc).ok,
+);
 
 // ── The clipboard ───────────────────────────────────────────────────────────
 // Tiptap gives a node a `toDOM` only when its extension defines `renderHTML`,
@@ -5937,12 +6356,19 @@ eq(
   eq('and keeps the order', replaced.map((extension) => extension.name), EXTENSIONS.map((extension) => extension.name));
   ok(
     'it THROWS on a name that is not in the list',
-    refuses(() => overrideByName(EXTENSIONS, { nosuchmark: (extension) => extension })),
+    refuses(
+      () => overrideByName(EXTENSIONS, { nosuchmark: (extension) => extension }),
+      'no extension named nosuchmark',
+    ),
   );
   ok(
     'and on an override that renames what it replaces',
-    refuses(() =>
-      overrideByName(EXTENSIONS, { link: (extension) => (extension as Mark).extend({ name: 'renamed' }) }),
+    refuses(
+      () =>
+        overrideByName(EXTENSIONS, {
+          link: (extension) => (extension as Mark).extend({ name: 'renamed' }),
+        }),
+      'override for "link" returned "renamed"',
     ),
   );
 }
@@ -6196,19 +6622,40 @@ ok('BodyEditorLazy loads the canvas with ssr disabled', /ssr:\s*false/.test(stri
 // THE CHUNK RULE, asserted over the whole tree rather than trusted. One eager
 // import anywhere puts ProseMirror in the chunk group every admin route loads.
 {
+  // Matched on the specifier's LAST SEGMENT, not on `editor/BodyEditor`. The
+  // path form was blind to a relative import, and a relative import is exactly
+  // what a sibling inside `editor/` would write: `from './BodyEditor'` names no
+  // directory at all, and a file in that subtree that something else reaches
+  // eagerly is precisely how ProseMirror gets into the shared chunk. The
+  // optional extension is there because a `.tsx` suffix is legal in a
+  // specifier and would otherwise slip past too.
+  const REACHES_BODY_EDITOR = /(from|import)\s*\(?\s*['"][^'"]*\bBodyEditor(\.tsx?)?['"]/;
   const importers = readdirSync(new URL('../src/', import.meta.url), { recursive: true })
     .map((entry) => String(entry))
     .filter((entry) => /\.(ts|tsx)$/.test(entry))
-    .filter((entry) => {
-      const source = readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8');
-      return /(from|import)\s*\(?\s*['"][^'"]*editor\/BodyEditor['"]/.test(source);
-    })
+    .filter((entry) =>
+      REACHES_BODY_EDITOR.test(readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8')),
+    )
     .sort();
   ok('the tree scan found files to read (fixture guard)', importers.length > 0);
   eq(
     'only BodyEditorLazy reaches BodyEditor, and it does so dynamically',
     importers,
     ['components/Admin/blogs/editor/BodyEditorLazy.tsx'],
+  );
+  // The detector is the thing under test here, so it is exercised on the four
+  // spellings rather than trusted. A sweep that matches nothing looks exactly
+  // like a tree with nothing to find.
+  eq(
+    'and the detector catches a relative import as well as an aliased one',
+    [
+      "import BodyEditor from '@/components/Admin/blogs/editor/BodyEditor';",
+      "import BodyEditor from './BodyEditor';",
+      "const X = dynamic(() => import('../editor/BodyEditor.tsx'));",
+      // Its own lazy door, which is the one file the sweep expects to name.
+      "import BodyEditorLazy from './BodyEditorLazy';",
+    ].map((sample) => REACHES_BODY_EDITOR.test(sample)),
+    [true, true, true, false],
   );
 }
 
@@ -6769,22 +7216,25 @@ eq('a scheduled post is gated on rescheduling', PRIMARY_ACTION_GATE.reschedule, 
 {
   const shape = Object.keys(blogDraftSchema.shape);
   ok('read the draft schema shape (fixture guard)', shape.length >= 25);
-  eq(
-    'every field the door accepts is claimed by a pane',
-    shape.filter((field) => !['post', 'seo', 'canvas'].includes(inspectorPaneFor(field))),
-    [],
-  );
+  // The three lists below PARTITION the shape, and that is what the claim
+  // "every field is claimed by a pane" actually needs. It used to be written
+  // as `shape.filter((f) => !['post','seo','canvas'].includes(paneFor(f)))`,
+  // which is structurally incapable of failing: `inspectorPaneFor` is total,
+  // two Set tests and a `return 'post'`, so nothing can land outside the
+  // three. What it was standing in for is the POST list, which nothing stated
+  // and which is where an unclassified field silently arrives.
+  const paneOf = (pane: string) => shape.filter((field) => inspectorPaneFor(field) === pane).sort();
   // The canvas set is the one that has to be right: RULING 31 put the hero's
   // image, description and caption on the canvas with `HeroField`, not in the
   // Post pane, and this is where that decision is written down.
   eq(
     'the canvas owns the title, the body and the whole hero',
-    shape.filter((field) => inspectorPaneFor(field) === 'canvas').sort(),
+    paneOf('canvas'),
     ['body', 'heroAlt', 'heroCaption', 'heroMedia', 'heroStaticPath', 'title'],
   );
   eq(
     'the SEO pane owns exactly the search and social fields',
-    shape.filter((field) => inspectorPaneFor(field) === 'seo').sort(),
+    paneOf('seo'),
     [
       'canonicalOverride',
       'emitLegacyMetaKeywords',
@@ -6800,6 +7250,35 @@ eq('a scheduled post is gated on rescheduling', PRIMARY_ACTION_GATE.reschedule, 
       'seoTitle',
       'twitterCard',
     ],
+  );
+  // THE ONE THAT ACTUALLY CATCHES AN UNCLAIMED FIELD. `inspectorPaneFor` falls
+  // back to `post`, so a field added to the draft door and classified nowhere
+  // lands here silently and the refusal names a control on the wrong tab. The
+  // canvas and SEO lists above cannot see it; this one goes red the moment the
+  // shape grows.
+  eq(
+    'and the Post pane owns exactly the rest',
+    paneOf('post'),
+    [
+      'authorSlug',
+      'categorySlug',
+      'description',
+      'entities',
+      'faqs',
+      'keyTakeaways',
+      'llmsInclude',
+      'relatedSlugs',
+      'serviceSlug',
+      'slug',
+      'sources',
+    ],
+  );
+  // And the three really do partition it: a fourth pane value would leave
+  // fields out of all three lists above while each list stayed correct.
+  eq(
+    'the three panes partition the door, with nothing left over',
+    paneOf('post').length + paneOf('seo').length + paneOf('canvas').length,
+    shape.length,
   );
   // A per-entry failure is keyed `faqs.2.answer` by flattenBlogIssues, so the
   // FIRST segment is what decides.
@@ -7033,7 +7512,7 @@ eq('and it is trimmed', snippetClamp('  padded  ', 60), 'padded');
   for (const [label, src] of EDITOR_SCREEN) {
     eq(
       `no em dash in ${label} outside its comments`,
-      [...stripComments(src).replace(EMPTY_CELL_GLYPH, '').matchAll(/.{0,30}—.{0,30}/g)].map(
+      [...withoutEmptyGlyph(stripComments(src)).matchAll(/.{0,30}—.{0,30}/g)].map(
         (match) => match[0],
       ),
       [],
@@ -7378,7 +7857,29 @@ eq(
     hidden: 7,
   });
   eq('an empty history folds to nothing at all', foldRevisionList([], 5), { shown: [], hidden: 0 });
-  ok('and the real cap is a number a post can actually reach', BLOG_REVISION_LIST_CAP > 0);
+
+  // THE PRODUCTION PATH, which every assertion above walks around: all six
+  // calls pass an explicit cap, and `revisions/page.tsx` passes NONE. Mutating
+  // the default to 3 left the whole block green while the history screen
+  // silently showed three versions.
+  const many = Array.from({ length: BLOG_REVISION_LIST_CAP + 3 }, (_, i) => i);
+  eq(
+    'the default cap is the exported one',
+    foldRevisionList(many),
+    foldRevisionList(many, BLOG_REVISION_LIST_CAP),
+  );
+  eq(
+    'and folding at it shows that many and states the rest',
+    { shown: foldRevisionList(many).shown.length, hidden: foldRevisionList(many).hidden },
+    { shown: BLOG_REVISION_LIST_CAP, hidden: 3 },
+  );
+  // The magnitude, bounded on BOTH sides. `> 0` was the assertion here, and it
+  // passes for a cap of ONE: a fold that showed a single version and hid the
+  // rest would satisfy it. The cap is a safety net against a page with no
+  // bottom, not a pager, so a post saved every day for a month still renders
+  // whole, and a runaway history is still cut.
+  ok('the cap survives a month of daily saves', BLOG_REVISION_LIST_CAP >= 31);
+  ok('and still cuts a runaway history', Number.isInteger(BLOG_REVISION_LIST_CAP) && BLOG_REVISION_LIST_CAP <= 200);
 }
 
 // ---- 15.3 canRestoreRevision mirrors the door -----------------------------
@@ -7671,10 +8172,8 @@ ok(
 //
 // The house rule exempts one thing, and the revisions table uses it: the lone
 // `—` empty-value glyph in a table cell, which is a spreadsheet convention
-// rather than prose (`cadOrDash`, `?? '—'`). It is stripped by SHAPE, so a
-// glyph standing alone as an element's whole text is exempt and an em dash
-// anywhere inside a sentence is not.
-const withoutEmptyGlyph = (code: string) => code.replace(/>\s*—\s*</g, '><');
+// rather than prose (`cadOrDash`, `?? '—'`). `withoutEmptyGlyph`, defined in
+// section 11 beside the other copy sweep, is the one door for that exemption.
 //
 // `RevisionsTable.tsx` is deliberately NOT in this list: section 13's sweep
 // reads the whole `Admin/blogs/` directory, so it joined that one the moment
@@ -7779,7 +8278,9 @@ ok('handing the remainder down to the table', /hidden=\{hidden\}/.test(REVISIONS
   // that rule now lives for everything in this file.
   for (const [label, code] of [
     ['RevisionsTable.tsx', REVISIONS_TABLE_CODE],
-    ['BlogRevisionsSkeleton', stripComments(SKELETON_SRC)],
+    // The WHOLE file, not the skeleton's own slice, and it has to be: the
+    // count is import-line plus use, and the import sits above every function.
+    ['AdminSkeletons.tsx (the revision row)', stripComments(SKELETON_SRC)],
   ] as const) {
     eq(
       `${label} imports every revision box token AND applies it`,
@@ -7806,8 +8307,25 @@ ok('handing the remainder down to the table', /hidden=\{hidden\}/.test(REVISIONS
     '</ul>',
     'the version row',
   );
-  const skeletonRegion = region(
+  // Sliced to BlogRevisionsSkeleton FIRST. `{Array.from({ length: 6 }).map(`
+  // appears three times in AdminSkeletons.tsx (here, the task list and the
+  // task calendar), and `indexOf` takes the first: this one is first only
+  // because BlogRevisionsSkeleton happens to be declared above them. Move it
+  // down the file and every responsive assertion below would be comparing the
+  // blog's version row against the TASK board's skeleton, in green.
+  const REVISIONS_SKELETON = region(
     SKELETON_SRC,
+    'export function BlogRevisionsSkeleton(',
+    'export function SubmissionDetailSkeleton(',
+    'BlogRevisionsSkeleton',
+  );
+  eq(
+    'and that slice holds exactly one skeleton',
+    occurrences(REVISIONS_SKELETON, 'export function '),
+    1,
+  );
+  const skeletonRegion = region(
+    REVISIONS_SKELETON,
     '{Array.from({ length: 6 }).map((_, i) => (',
     '</ul>',
     'the version row skeleton',
@@ -8676,7 +9194,10 @@ try {
   // direction it is silent: too loose and every ordinary edit to every post
   // pops a toast about an import formula, too tight and the 38 imported posts
   // change their visible reading time with nothing said.
-  {
+  // Inside `block(...)` like every other numbered section here: a seed helper
+  // reports by THROWING, and a bare `{ }` puts these assertions outside the
+  // per-block error isolation the wrapper exists to provide.
+  await block('the import provenance of a stored word count', async () => {
     const provenance = async (postId: string) => (await selectImportProvenance(db, postId))[0];
     // The REAL fold, not a twin of it: a hand-copied `imported && !edited` here
     // could not see a change to `isLegacyWordCount`, which is the "asserting a
@@ -8772,7 +9293,7 @@ try {
     await newRevision(madeHere.id, slugOf('provenance-made'), 'Made here', null);
     eq('db: a post made in the editor was never imported', (await provenance(madeHere.id))?.imported, false);
     ok('db: so it never gets the notice either', !(await legacy(madeHere.id)));
-  }
+  });
 
   // ── 12.14 the RESTRICT behind the taxonomy delete refusals ───────────────
   // `countPostsForAuthor` counts posts AND revisions because BOTH tables carry
