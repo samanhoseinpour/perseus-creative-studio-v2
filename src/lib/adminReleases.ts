@@ -43,6 +43,76 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.10': {
+    version: '2026.9.10',
+    date: '2026-09-05',
+    headline: 'The blog is written, scheduled and published from the dashboard.',
+    // NOTICE, and it is the clearest case there has been for one: a whole
+    // section appeared in the rail, and the way blog content reaches the site
+    // changed completely. Anyone holding the Blog area has to be TOLD, not
+    // left to find it. It reaches nobody else: `blogs` is a grantable area and
+    // is deliberately not in DEFAULT_AREAS, so the four entries below are
+    // absent for every account that does not hold it.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'blogs',
+        id: '2026.9.10/blog-section',
+        kind: 'added',
+        title: 'The blog is managed from the dashboard',
+        what: '"Blog" sits in the Website group beside Projects, Clients and Careers, and it holds every post behind the public blog: drafts, posts waiting to go out, what is live, what has been taken down, and the trash. Everything already on the blog is in it.',
+        steps: [
+          'Tabs above the list narrow it to one status at a time and each says how many posts it holds. The search box covers a post’s title, its address, its description, the author and the category.',
+          '"Authors" and "Categories" in the header manage the people posts are filed under and the sections they sit in. A category needs a search title and description of its own before any post can be published into it.',
+          '"New post" starts an empty draft and opens it. Nothing reaches the public blog until you publish it.',
+        ],
+        href: '/admin/blogs',
+        help: 'blogs',
+      },
+      {
+        area: 'blogs',
+        id: '2026.9.10/post-editor',
+        kind: 'added',
+        title: 'A writing screen that saves as you type',
+        what: 'Opening a post gives you the article in the middle, laid out the way it will read on the site, with everything else beside it in two panes: "Post" for the address, author, category, excerpt, takeaways, FAQs and sources, and "SEO" for the search title and description, the sharing image, and what search engines may do with the page.',
+        steps: [
+          'What you type is saved on its own about a second and a half after you stop, so there is nothing to press as you work. The word beside the status says where that stands.',
+          '"Save" does something different: it keeps a numbered copy of the post exactly as it stands, one you can read and go back to. Autosave keeps none, so press Save at the end of anything you would mind losing.',
+          '"Saved versions" in the ⋯ menu lists them all. Restoring one brings back the words and the SEO fields only. The address, the dates and the status stay as they are.',
+        ],
+        href: '/admin/blogs',
+        help: 'blogs',
+      },
+      {
+        area: 'blogs',
+        id: '2026.9.10/scheduling',
+        kind: 'added',
+        title: 'Set a post to go live later',
+        what: 'Rather than publishing now you can pick a day and a time, and the post waits as a draft until then and goes out on its own.',
+        steps: [
+          'The day and the time are on your own clock. Under them the screen states the date the post will really carry, which is the studio’s Vancouver date, so a time near midnight cannot quietly land a day out.',
+          'The check runs every fifteen minutes, so a post can go live up to that long after the minute you picked.',
+          'Editing a scheduled post changes the draft behind it and not the version that is queued. Set the time again to bring your later words into what goes out.',
+        ],
+        href: '/admin/blogs',
+        help: 'blogs',
+      },
+      {
+        area: 'blogs',
+        id: '2026.9.10/draft-preview',
+        kind: 'added',
+        title: 'Read a draft as the page it will become',
+        what: '"Preview" opens the post in a new tab with the site’s own header and footer around it, exactly as a reader will meet it, and a strip along the bottom marks it a draft so it is never taken for the live page.',
+        steps: [
+          'Nobody outside the dashboard can open it, and search engines are told to leave it alone.',
+          'The helpful vote and the sharing buttons are left off, because both would point at a page that does not exist yet.',
+          'Any saved version can be read the same way, from "Saved versions".',
+        ],
+        href: '/admin/blogs',
+        help: 'blogs',
+      },
+    ],
+  },
   '2026.9.9': {
     version: '2026.9.9',
     date: '2026-09-03',

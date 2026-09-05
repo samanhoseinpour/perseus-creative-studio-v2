@@ -2,7 +2,7 @@
 
 A motion-heavy marketing site — plus the studio's private admin dashboard — built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and a database-backed blog to showcase services, projects, and client work.
 
-The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services content code-defined in `src/constants/*`; the blog lives in Postgres (no CMS UI yet — until the /admin editor ships, posts are loaded by the `npm run db:import-blogs` importer). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus five `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
+The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services content code-defined in `src/constants/*`; the blog lives in Postgres and is written in the dashboard. **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, the blog editor, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus six `CRON_SECRET`-gated cron endpoints), and portfolio and blog reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
 
 ## Tech Stack
 
@@ -50,6 +50,7 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/admin/inquiries`, `/admin/applications` | Contact + careers inboxes: status triage, detail views, CSV exports, private résumé streaming |
 | `/admin/projects`, `/admin/clients` | Portfolio management: case studies + media, client roster / logo wall |
 | `/admin/careers` | Job openings + categories behind `/contact/careers`: open / filled / draft, pay ranges, posting dates |
+| `/admin/blogs` | The blog: posts list, authors and categories. `/[id]` is the editor (autosave + explicit saves), `/[id]/revisions` the saved versions, `/[id]/preview` the draft rendered as the public page (outside `(protected)`, so it carries the real marketing chrome; `noindex`, and gated in the page by `requireArea('blogs')`) |
 | `/admin/feedback` | "Was this article helpful?" vote tallies |
 | `/admin/payroll` | Monthly team pay: month screen, `/members` roster, `/[memberId]`, `/export`. Owner-granted sensitive area |
 | `/admin/my-pay` | A member's own pay history — gated on their own payroll record, not on an area grant |
@@ -62,7 +63,7 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/admin/login`, `/admin/reset-password` | The only unauthenticated admin paths (enforced by `src/proxy.ts`) |
 | `/share/reports/[token]` | Tokenized, read-only public client report. Outside both route groups; `noindex`, `force-dynamic` so revocation bites immediately |
 | `/api/auth/[...all]` | Better Auth handler |
-| `/api/cron/*` | Five `CRON_SECRET`-gated endpoints — `recurring-tasks`, `weekly-digest`, `due-reminders`, `payroll-nudge`, `monitoring` — scheduled by `vercel.json` |
+| `/api/cron/*` | Six `CRON_SECRET`-gated endpoints — `recurring-tasks`, `weekly-digest`, `due-reminders`, `payroll-nudge`, `monitoring`, `blog-publish` — scheduled by `vercel.json` |
 
 Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services/websites/website-development`, `/authors → /blogs/authors`).
 
@@ -75,7 +76,8 @@ src/
 │   ├── (admin)/admin/        # login, reset-password, and the (protected)/ dashboard shell
 │   ├── share/reports/[token]/  # tokenized public client report — outside both route groups
 │   ├── api/auth/[...all]/    # Better Auth route handler
-│   ├── api/cron/             # recurring-tasks, weekly-digest, due-reminders, payroll-nudge, monitoring
+│   ├── api/cron/             # recurring-tasks, weekly-digest, due-reminders, payroll-nudge,
+│   │                         # monitoring, blog-publish
 │   ├── layout.tsx            # root: font, ConsentProvider → ThemeProvider, Toaster
 │   └── manifest.json, sitemap.xml/ + sitemaps/*, robots.txt, favicon.ico, globals.css
 ├── components/               # Shared components (barrel: components/index.ts — pages/layouts only)
@@ -83,10 +85,10 @@ src/
 │   ├── Pwa/                  # service-worker registration + offline banner
 │   └── ui/                   # shadcn-style primitives
 ├── constants/                # Code-defined content: services.ts, projects.ts (category chrome), faq.ts,
-│                             # blogs.ts (importer-only until the /admin editor ships), …
-├── content/blogs/            # MDX post bodies — the importer's source until the /admin editor ships
+│                             # blogs.ts (the superseded importer registry, pending removal), …
+├── content/blogs/            # MDX post bodies — the superseded importer corpus, pending removal
 ├── db/                       # Drizzle schemas (schema.ts + auth-schema.ts), db clients, and the query
-│                             # modules: admin, portfolio, task, ticket, payroll, activity
+│                             # modules: admin, portfolio, task, ticket, payroll, activity, blog
 ├── hooks/                    # Custom React hooks
 ├── lib/                      # ~60 modules on a one-door-per-concern rule: calendar (the only timezone door),
 │                             # payrollAmounts (the only money door), mail, activityLog, adminAccess (the
@@ -104,8 +106,9 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/c
 
 ## Content & Data
 
-- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. Until the /admin editor ships, content edits go through `npm run db:import-blogs -- --apply`, which imports `src/constants/blogs.ts` (the metadata registry, importer-only now) and `src/content/blogs/**` (the MDX bodies) — both stay in the tree for that purpose. A post the editor has since touched is skipped by the importer for good, so it can never overwrite an edit.
-- **Authors** are `blog_authors` rows; every byline, profile page, and `Person`/`Organization` JSON-LD resolves through the store.
+- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. They are written at `/admin/blogs`. Three things about that are worth knowing before touching it: the editor writes a **working copy** while the public renders the **published revision**, so an explicit Save on a live post deliberately changes nothing a reader sees until you publish; autosave invalidates *no* cache at all (every prerendered marketing page carries the `blogs` tag, so a keystroke timer would re-render the whole public site); and status moves through its own doors, never through a save. `npm run db:import-blogs` is the superseded cutover path, still in the tree pending removal — a post the editor has touched is skipped by it for good, so it can never overwrite an edit.
+- **Scheduled posts** are published by `/api/cron/blog-publish` every 15 minutes, so a post can go live up to that long after the minute the writer picked. It shares the monitoring slot on purpose (a scale-to-zero Neon database is already awake at that minute) and must invalidate through `invalidateBlogFromCron`: `updateTag` throws outside a server action, and `revalidateTag(tag, 'max')` is stale-while-revalidate rather than expire, which would serve `/blogs` its pre-publish snapshot. See `src/lib/blogInvalidate.ts`.
+- **Authors** are `blog_authors` rows managed from the posts list; every byline, profile page, and `Person`/`Organization` JSON-LD resolves through the store. `src/lib/adminIdentity.ts` is deliberately **not** wired to them: a dashboard account and a blog byline are two different things.
 - **Portfolio** splits between code and database: `src/constants/projects.ts` holds only category *chrome* (hero/FAQ/SEO copy and the site-wide category order), while case studies, their media, and the client roster live in Postgres (`projects`, `project_media`, `clients`) behind the cached accessors in `src/lib/projectsStore.ts`. The `/admin` actions invalidate by cache tag, so edits appear on the live site without a redeploy. The Partners logo marquee is DB-driven too (`getPartnerLogos`).
 - **Contact inbox:** the `submitContact` server action (`src/app/(marketing)/contact/actions.ts`) validates with Zod, dedups retries on a client-generated `client_id`, stores rows in `contact_submissions` (spam is flagged, not dropped), uploads PDF résumés to private Vercel Blob, and emails notifications via Resend.
 - **Article feedback:** the blog's "Was this article helpful?" widget upserts votes through a server action into `article_feedback`; tallies surface at `/admin/feedback`.
@@ -118,7 +121,7 @@ Better Auth (email + password, passkeys) on the same Neon database. There is **n
 
 **Access is three tiers plus per-area grants.** `owner` (exactly one account, holds every area implicitly) > `superadmin` (role privileges — the users page, ticket triage — *plus* stored area grants like everyone else) > `member` (stored grants only). **Role changes happen only via SQL/migration**, and the owner row refuses reset and delete from everyone, so a total lockout is structurally impossible.
 
-Every admin surface is its own grantable area (`src/lib/adminAreas.ts`): `inquiries`, `applications`, `tickets`, `feedback`, `projects`, `clients`, `tasks`, `leaderboard`, `reports`, `payroll`, `logs`. Two of them — **`payroll` and `logs`** — are *sensitive*: their chips render for anyone who can open `/admin/users`, but only the owner may flip them, enforced server-side. The pre-ticked set for a new account is an explicit curated list, not "all areas", so a future area can never silently pre-tick itself. `src/proxy.ts` optimistically bounces sessionless visitors to `/admin/login`; the real authorization boundary is the `(protected)/layout.tsx` server component, which validates every session against the database. All admin mutations are server actions under `src/app/(admin)/admin/(protected)/_actions/`; private uploads (résumés, avatars, ticket screenshots) are served only through authenticated streaming routes.
+Every admin surface is its own grantable area (`src/lib/adminAreas.ts`): `inquiries`, `applications`, `tickets`, `feedback`, `projects`, `clients`, `careers`, `blogs`, `tasks`, `leaderboard`, `reports`, `payroll`, `costs`, `logs`, `monitoring`. Four of them — **`payroll`, `costs`, `logs` and `monitoring`** — are *sensitive*: their chips render for anyone who can open `/admin/users`, but only the owner may flip them, enforced server-side, and they stay contiguous at the tail of the list because the toggles draw their divider before the first one. The pre-ticked set for a new account is an explicit curated list, not "all areas", so a future area can never silently pre-tick itself. `src/proxy.ts` optimistically bounces sessionless visitors to `/admin/login`; the real authorization boundary is the `(protected)/layout.tsx` server component, which validates every session against the database. All admin mutations are server actions under `src/app/(admin)/admin/(protected)/_actions/`; private uploads (résumés, avatars, ticket screenshots) are served only through authenticated streaming routes.
 
 Three design rules shape the dashboard's data layer, and all three are load-bearing rather than stylistic:
 
@@ -144,7 +147,7 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
    BLOB_READ_WRITE_TOKEN=…              # PRIVATE blob store: résumés, avatars, ticket screenshots
    PUBLIC_BLOB_READ_WRITE_TOKEN=…       # PUBLIC blob store: client logos + project media
    GOOGLE_PLACES_API_KEY=…              # Google-reviews section (server-only)
-   CRON_SECRET=…                        # Bearer token the five /api/cron endpoints require
+   CRON_SECRET=…                        # Bearer token the six /api/cron endpoints require
    PSI_API_KEY=…                        # only for `npm run psi`
    NEXT_PUBLIC_SITE_URL=https://www.perseustudio.com   # optional; this is the default
    ```
@@ -189,9 +192,11 @@ node --env-file=.env.local --import tsx scripts/verify-payroll-db.mts    # the s
 node --env-file=.env.local --import tsx scripts/check-activity-log.mts   # the audit-log redaction denylist
 node --import tsx scripts/check-calendar.mts                             # the two-clocks timezone contract
 node --import tsx scripts/check-blog-body.mts                            # the blog body vocabulary, href guard, renderer
+node --import tsx scripts/check-blogs.mts                                # the blog editor: states, fingerprints, invalidation
+node --conditions=react-server --import tsx scripts/check-releases.mts   # the changelog's ordering, audiences and links
 ```
 
-Each is safe to re-run: the two that touch the database prefix their rows and sweep them in a `finally`.
+Each is safe to re-run: the ones that touch the database prefix their rows and sweep them in a `finally`. Two caveats. `check-releases.mts` needs `--conditions=react-server` because the registry is `server-only`, and stripping that guard is the obvious wrong fix. And `check-blogs.mts --db` and `check-blog-body.mts --db` share the `zz-check-` fixture prefix, so never run both at once.
 
 > There is no test runner configured in this repo. Lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types.
 

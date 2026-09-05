@@ -58,6 +58,12 @@ import type { NavGate } from '@/lib/adminNav';
  * history as unread.
  */
 export const RELEASE_VERSIONS = [
+  // The first DOUBLE-DIGIT N this repo has shipped, and worth naming because
+  // it is exactly the pair a string compare gets backwards: '2026.9.10' sorts
+  // BELOW '2026.9.9' as strings and above it as numbers. compareVersions
+  // parses to a numeric triple, and scripts/check-releases.mts pins the tuple
+  // in strictly descending order, so this entry is also the proof.
+  '2026.9.10',
   '2026.9.9',
   '2026.9.8',
   '2026.9.7',
