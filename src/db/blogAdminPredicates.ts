@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, ilike, inArray, sql, type SQL } from 'drizzl
 
 import type { BlogDb } from '@/db/blogPredicates';
 import { searchAllTokens } from '@/db/taskPredicates';
-import { blogAuthors, blogCategories, blogPosts } from '@/db/schema';
+import { blogAuthors, blogCategories, blogPostRevisions, blogPosts } from '@/db/schema';
 import type { BlogPostStatus } from '@/lib/blogFields';
 import { blogStatusFilter, type BlogListParams } from '@/lib/blogFilters';
 
@@ -116,6 +116,109 @@ export function selectStatusCounts(
     .innerJoin(blogAuthors, eq(blogAuthors.id, blogPosts.authorId))
     .where(adminPostsFacets(params))
     .groupBy(blogPosts.status);
+}
+
+/**
+ * What a post's revision history says about where its stored `word_count` came
+ * from, in one round trip.
+ *
+ * THE EDITED HALF IS THE IMPORTER'S OWN SKIP RULE, not a second reading of it:
+ * scripts/import-blogs.mts refuses to touch a post carrying ANY non-`import`
+ * revision anywhere in its history, because that is one the editor has already
+ * written to. The same existence test answers the question the editor asks,
+ * which is whether the number in `word_count` is still the legacy
+ * `countWords(mdx)` over the whole MDX file.
+ *
+ * THREE READINGS, and every one of them is needed. The revision half alone
+ * says the EDITOR has never written a durable version; the count half says the
+ * number on the working row is still the one the importer put there.
+ *
+ *  - `imported`. A post created in the editor has no revisions at all until
+ *    its first explicit Save, so "no non-import revision" is true of it too,
+ *    and gating on that alone would announce a word-count change on every
+ *    brand-new post from 0 to whatever was typed.
+ *  - `edited`. The importer's own skip rule.
+ *  - `importWordCount` against `workingWordCount`. `saveDraft` writes NO
+ *    revision, so the two flags above survive any number of autosaves: without
+ *    this third reading a writer could type, get the notice, leave without an
+ *    explicit save, come back, type one more word and get the same notice for
+ *    a two-word delta between two numbers that are both already the editor's.
+ *    An autosave moves `blog_posts.word_count` and leaves the import
+ *    revision's alone, so the moment they diverge the count is no longer the
+ *    importer's and the notice is spent.
+ *
+ * `max(...) filter (where reason = 'import')` rather than the NEWEST import
+ * revision's count, and the difference only shows on a post the importer wrote
+ * twice with a changed body. There the max may be the older, larger figure and
+ * the equality fails, so the notice is not shown. That is the safe direction:
+ * silence about a change, rather than a toast on a post that never moved.
+ *
+ * The working count is joined rather than passed in, so this stays ONE round
+ * trip that the editor page can fire in parallel with `getAdminPost` instead
+ * of waiting for it. Every row of the group belongs to the same post, so `max`
+ * over it is exact.
+ *
+ * A post with no revisions still answers, and that is worth stating because
+ * the obvious guess is wrong: there is no GROUP BY here, so this is a scalar
+ * aggregate and Postgres returns exactly ONE row whatever the join matched.
+ * Over an empty set every column of it is NULL. `isLegacyWordCount` therefore
+ * compares against `true` rather than reading the flags as booleans, and
+ * tolerates `undefined` for a caller that destructured an empty array rather
+ * than because this query can produce one.
+ */
+export function selectImportProvenance(
+  db: BlogDb,
+  postId: string,
+): Promise<
+  {
+    imported: boolean | null;
+    edited: boolean | null;
+    importWordCount: number | null;
+    workingWordCount: number | null;
+  }[]
+> {
+  return db
+    .select({
+      imported: sql<boolean | null>`bool_or(${blogPostRevisions.reason} = 'import')`,
+      edited: sql<boolean | null>`bool_or(${blogPostRevisions.reason} <> 'import')`,
+      importWordCount: sql<
+        number | null
+      >`max(${blogPostRevisions.wordCount}) filter (where ${blogPostRevisions.reason} = 'import')`,
+      workingWordCount: sql<number | null>`max(${blogPosts.wordCount})`,
+    })
+    .from(blogPostRevisions)
+    .innerJoin(blogPosts, eq(blogPosts.id, blogPostRevisions.postId))
+    .where(eq(blogPostRevisions.postId, postId));
+}
+
+/**
+ * The fold over that row: whether the post's stored `word_count` is still the
+ * one the importer wrote.
+ *
+ * Separate from the query, and guard-free beside it, so `scripts/check-blogs.mts`
+ * can pin the decision as well as the SQL. All three readings are load-bearing
+ * and each fails in its own direction: without `imported` every brand-new post
+ * gets the notice, without `edited` a post the editor has published keeps
+ * getting it, and without the count equality it comes back after every reload
+ * until somebody presses Save.
+ *
+ * The count comparison is `===` on two integers, so a null on either side
+ * (no import revision, or a row that is not there) answers false without a
+ * special case.
+ */
+export function isLegacyWordCount(
+  row:
+    | {
+        imported: boolean | null;
+        edited: boolean | null;
+        importWordCount: number | null;
+        workingWordCount: number | null;
+      }
+    | undefined,
+): boolean {
+  if (row === undefined) return false;
+  if (row.imported !== true || row.edited === true) return false;
+  return row.importWordCount !== null && row.importWordCount === row.workingWordCount;
 }
 
 /**

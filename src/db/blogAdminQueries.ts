@@ -4,7 +4,13 @@ import { and, asc, count, desc, eq, ilike, inArray, max, ne, sql } from 'drizzle
 import { db } from '@/db';
 import { searchAllTokens } from '@/db/adminQueries';
 import { user } from '@/db/auth-schema';
-import { adminPostsOrder, adminPostsWhere, selectStatusCounts } from '@/db/blogAdminPredicates';
+import {
+  adminPostsOrder,
+  adminPostsWhere,
+  isLegacyWordCount,
+  selectImportProvenance,
+  selectStatusCounts,
+} from '@/db/blogAdminPredicates';
 import { publicPostsWhere } from '@/db/blogPredicates';
 import { fetchPostEntities, fetchPostRelatedSlugs } from '@/db/blogQueries';
 import {
@@ -222,6 +228,30 @@ export async function getAdminPost(id: string): Promise<AdminPost | null> {
   ]);
   const row = rows[0];
   return row ? { ...row, relatedSlugs, entities } : null;
+}
+
+/**
+ * Whether this post's stored `word_count` is still the one the IMPORTER wrote.
+ *
+ * True only for a post that was imported and that the editor has never written
+ * to, which is exactly `scripts/import-blogs.mts`'s own skip rule read from
+ * the other end. The editor uses it to decide whether to say anything about
+ * the count changing on the first save: the 38 imported rows carry the legacy
+ * `countWords(mdx)` over the whole file and the editor stores
+ * `wordCount({ doc, faqs })`, which comes out 4 to 21 percent lower and moves
+ * the visible "N min read" byline. Every other post's count is already the
+ * editor's, so there is nothing to announce and a toast would be noise on an
+ * ordinary edit.
+ *
+ * DELIBERATELY NOT A FIELD ON `getAdminPost`. That reader is what every save
+ * door calls through `prepareSave`, so hanging this off it would put an extra
+ * neon-http round trip on every autosave, for ever, for a value only the
+ * page's first render reads. The editor page asks for it once, in the same
+ * `Promise.all` as everything else, and pays nothing for it.
+ */
+export async function postWordCountIsLegacy(id: string): Promise<boolean> {
+  if (!UUID_RE.test(id)) return false;
+  return isLegacyWordCount((await selectImportProvenance(db, id))[0]);
 }
 
 export type AdminRevisionRow = {

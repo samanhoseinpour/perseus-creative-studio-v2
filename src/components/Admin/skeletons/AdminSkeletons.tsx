@@ -33,6 +33,32 @@ import {
   tabItem as blogTabItem,
   tabStrip as blogTabStrip,
 } from '@/components/Admin/blogs/listBox';
+// The post editor's own boxes, and the body editor's. Same rule again: the
+// bar's height, the rail's width and the canvas's padding must be the ones the
+// page really uses, or loading.tsx renders one shape and the page snaps to
+// another.
+import {
+  editorBar,
+  editorBarActions,
+  editorBarLead,
+  editorCanvasColumn,
+  editorLayout,
+  editorRail,
+  editorSaveState,
+  editorTitleField,
+  inspectorBody,
+  inspectorGroup,
+  inspectorPanel,
+  inspectorTab,
+  inspectorTabStrip,
+} from '@/components/Admin/blogs/postBox';
+import {
+  editorCanvas,
+  editorShell,
+  editorSkeletonLine,
+  editorSkeletonToolbar,
+  editorToolbar,
+} from '@/components/Admin/blogs/editor/editorBox';
 import { TASK_COLUMNS, type TaskColumn } from '@/lib/taskColumns';
 import type { TaskViewMode } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
@@ -941,6 +967,94 @@ export function BlogsListSkeleton() {
       </GlassPanel>
 
       <SkeletonNote />
+    </Shell>
+  );
+}
+
+/**
+ * The post editor: sticky bar, the article column, the inspector rail.
+ *
+ * Every box comes from the two real modules (`blogs/postBox.ts` and
+ * `blogs/editor/editorBox.ts`) rather than being copied, which is the whole
+ * reason those files exist: the bar's height, the rail's width and the
+ * canvas's padding all have to be the ones the page uses or the layout jumps
+ * on swap. `wide` matches the page's own token for the same reason.
+ *
+ * The body editor's own skeleton (`BodyEditorLazy`'s `loading`) takes over the
+ * moment the page renders, so this one draws the same shell at the same height
+ * and the two hand off without a step.
+ */
+export function BlogEditorSkeleton() {
+  return (
+    <Shell label="Loading post">
+      <div className={cn(editorBar, 'border-white/45 dark:border-white/10')}>
+        <div className={editorBarLead}>
+          <span className="size-8 shrink-0 rounded-lg bg-foreground/10" />
+          <SkeletonPill className="h-5 w-16" />
+          <span className={editorSaveState}>
+            <SkeletonText className="h-2.5 w-14" />
+          </span>
+        </div>
+        <div className={editorBarActions}>
+          {/* Preview, Save, the primary action, the ⋯ trigger. Settings is
+              phone-only and conditional, so it is deliberately not reserved. */}
+          <SkeletonPill className="h-8 w-20" />
+          <SkeletonPill className="h-8 w-16" />
+          <SkeletonPill className="h-8 w-20" />
+          <span className="size-8 shrink-0 rounded-lg bg-foreground/10" />
+        </div>
+      </div>
+
+      <div className={editorLayout}>
+        <div className={editorCanvasColumn}>
+          <div className={editorTitleField}>
+            <SkeletonText className="h-6 w-3/4" />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <SkeletonLine className="h-2.5 w-20" />
+            <div className="aspect-[16/10] w-full rounded-xl bg-foreground/10" />
+            <SkeletonLine className="h-10 w-full rounded-md" />
+            <SkeletonLine className="h-10 w-full rounded-md" />
+          </div>
+
+          <div className={editorShell}>
+            <div className={editorToolbar}>
+              <div className={editorSkeletonToolbar} />
+            </div>
+            <div className={editorCanvas}>
+              <div className="flex flex-col gap-4">
+                {['h-4 w-2/3', 'w-full', 'w-full', 'w-5/6', 'w-full', 'w-3/4'].map((w) => (
+                  <span key={w} className="text-md">
+                    <span className={cn(editorSkeletonLine, w)} />
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside className={editorRail}>
+          <div className={inspectorPanel}>
+            <GlassRim />
+            <div className={inspectorTabStrip}>
+              {['w-8', 'w-8'].map((w) => (
+                <span key={w} className={cn(inspectorTab, 'border-transparent')}>
+                  <SkeletonText className={cn('h-2.5', w)} />
+                </span>
+              ))}
+            </div>
+            <div className={inspectorBody}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className={inspectorGroup}>
+                  <SkeletonLine className="h-2.5 w-24" />
+                  <SkeletonLine className="h-10 w-full rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
     </Shell>
   );
 }

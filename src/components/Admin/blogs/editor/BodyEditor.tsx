@@ -26,7 +26,7 @@ import {
 } from '@/components/Admin/blogs/editor/editorBox';
 import { BLOG_NODE_VIEWS } from '@/components/Admin/blogs/editor/nodeviews';
 import { ARTICLE_BODY_CLASS } from '@/lib/articleBodyClass';
-import type { BlogDoc } from '@/lib/blogBody';
+import { stripTrailingEmptyParagraphs, type BlogDoc } from '@/lib/blogBody';
 import {
   figureBlock,
   filterBlogBlocks,
@@ -164,8 +164,16 @@ export default function BodyEditor({ postId, doc, onChange, editable = true }: P
         ),
       },
     },
+    // The document leaves here CANONICAL, which is what lets the page compare
+    // it for equality to decide whether anything is unsaved. `TrailingNode`
+    // appends an empty paragraph whenever the last child is not a paragraph,
+    // and it does that from `appendTransaction`, which runs on a bare SELECTION
+    // change: without the strip, clicking into a post that ends in a figure
+    // would count as an edit and fire an autosave nobody asked for. Stripping
+    // here rather than in the page is what keeps `blogBody.ts` (and with it
+    // the whole Tiptap schema) inside this async chunk.
     onUpdate: ({ editor: instance }) => {
-      onChange(instance.getJSON() as BlogDoc);
+      onChange(stripTrailingEmptyParagraphs(instance.getJSON() as BlogDoc));
     },
   });
 

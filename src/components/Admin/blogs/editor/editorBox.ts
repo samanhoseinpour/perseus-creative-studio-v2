@@ -33,6 +33,24 @@ export const editorToolDivider = 'mx-1 h-5 w-px shrink-0 bg-black/10';
  *  root inside it, never on a wrapper: its selectors are direct-child. */
 export const editorCanvas = 'px-4 py-6 sm:px-8 sm:py-10';
 
+// ── What a skeleton of the canvas draws ─────────────────────────────────────
+// Two boxes, exported for the reason every box in this file is: `BodyEditorLazy`
+// draws the canvas while the editor chunk loads and `BlogEditorSkeleton` draws
+// it while the PAGE loads, and the two have to be the same height or the
+// article column steps twice on the way in. They were hand-copied between the
+// two until the task 17 review caught it.
+
+/** One line of stand-in prose inside the canvas. Sits in a text-sized span,
+ *  the `SkeletonText` shape: a bare `h-2.5` div measures itself and comes out
+ *  short of the line box the sentence would have had. Darker than the
+ *  dashboard's own `foreground/10` because the canvas is white in both themes,
+ *  where an ink-tinted bar would disappear. */
+export const editorSkeletonLine =
+  'inline-block h-2.5 rounded bg-black/[0.07] align-middle';
+
+/** The toolbar strip's stand-in, at the height the real controls occupy. */
+export const editorSkeletonToolbar = 'h-8 w-full rounded-lg bg-black/[0.05]';
+
 /** Floating chrome: the slash menu and both bubble menus. */
 export const editorPopover =
   'z-50 flex max-h-[min(20rem,60svh)] w-64 flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl shadow-neutral-950/15';

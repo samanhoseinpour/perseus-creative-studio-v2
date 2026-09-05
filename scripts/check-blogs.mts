@@ -49,6 +49,8 @@ import { and, eq as eqCol, like, notLike, sql } from 'drizzle-orm';
 import {
   adminPostsOrder,
   adminPostsWhere,
+  isLegacyWordCount,
+  selectImportProvenance,
   selectStatusCounts,
 } from '@/db/blogAdminPredicates';
 import { selectPostForPreview, selectPublishedPost, type BlogDb } from '@/db/blogPredicates';
@@ -150,12 +152,41 @@ import {
 } from '@/lib/blogListFields';
 import { postGrid, tabItem, tabStrip } from '@/components/Admin/blogs/listBox';
 import {
+  editorSkeletonLine,
+  editorSkeletonToolbar,
+} from '@/components/Admin/blogs/editor/editorBox';
+import {
+  BLOG_SAVE_STATE_LABELS,
+  blogEditorActions,
+  buildPostFields,
+  clampDayMinutes,
+  compactPostLists,
+  dayLengthMinutes,
+  describeWordCountChange,
+  inspectorPaneFor,
+  PRIMARY_ACTION_GATE,
+  minutesToTimeValue,
+  nextSlug,
+  nextSlugFollow,
+  primaryAction,
+  scheduleInstant,
+  slugFollowArms,
+  snippetClamp,
+  studioDayFor,
+  timeValueToMinutes,
+  wordCountLine,
+  type BlogEditorValues,
+  type SlugFollow,
+  type SlugFollowEvent,
+} from '@/lib/blogEditorFields';
+import {
   blogAuthorFieldsSchema,
   blogCategoryFieldsSchema,
   blogDraftSchema,
   blogPostFieldsSchema,
   blogPublishSchema,
   blogRobotsExtraSchema,
+  blogSlugSchema,
   flattenBlogIssues,
 } from '@/lib/blogPostSchema';
 import { STUDIO_TZ, dayKeyIn, dayNoonIn, dayStartIn, dayTimeIn } from '@/lib/calendar';
@@ -5798,6 +5829,857 @@ eq(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 13. The editor's own decisions (src/lib/blogEditorFields.ts)
+// ═══════════════════════════════════════════════════════════════════════════
+// The writing screen is a client entry this script cannot import, so every
+// decision it makes that could be silently wrong was moved into that leaf
+// (the `taskCalendar.ts` / `digestEmail.ts` arrangement). Six of them, and
+// each fails in its own quiet way:
+//
+//  - `buildPostFields` maps a form's `''` back onto a nullable column. Miss
+//    one and either the save is refused (the two path shapes) or both
+//    fingerprints move for a change nobody made, which republishes a
+//    freshness signal and pings IndexNow for 38 unchanged URLs.
+//  - `compactPostLists` drops the rows nobody typed into. Without it a writer
+//    who clicks "Add FAQ" and types one space has every autosave refused
+//    while they are still thinking.
+//  - `clampDayMinutes` bounds a picked time by the day's REAL length. Section
+//    10 pinned that 23:00 on the 23-hour spring-forward day is really the
+//    next day and said outright that whatever offers a time picker has to
+//    bound it. This is that bound, and without it a scheduled post goes live
+//    a day late, once a year.
+//  - `nextSlugFollow` must never re-arm. A writer who typed an address and
+//    kept editing the title would otherwise watch it rewrite itself.
+//  - `blogEditorActions` is derived from `transitionProblem`, so the bar can
+//    never offer a move the state leaf refuses.
+//  - `inspectorPaneFor` decides which pane a refused field lives in, which on
+//    a phone is the difference between a message that points somewhere and
+//    one that just says no.
+
+// ---- The form fixture -----------------------------------------------------
+// Built from POST rather than written out, so a field added to the payload is
+// a type error here rather than an untested column. Nullable columns are held
+// as the editor holds them: `''`.
+const FORM: BlogEditorValues = {
+  slug: POST.slug,
+  title: POST.title,
+  description: POST.description,
+  categorySlug: POST.categorySlug,
+  authorSlug: POST.authorSlug,
+  serviceSlug: '',
+  heroStaticPath: HERO_PATH,
+  heroMedia: null,
+  heroAlt: POST.heroAlt,
+  heroCaption: '',
+  body: realBody as BlogDoc,
+  keyTakeaways: ['a'],
+  faqs: [{ question: 'q', answer: 'a' }],
+  sources: [{ title: 's', href: 'https://a.b/c' }],
+  entities: [{ name: 'n', sameAs: ['https://www.wikidata.org/wiki/Q1'], primary: true }],
+  relatedSlugs: ['y'],
+  seoTitle: POST.seoTitle,
+  seoDescription: POST.seoDescription,
+  canonicalOverride: '',
+  ogTitle: POST.ogTitle,
+  ogDescription: POST.ogDescription,
+  ogImageStaticPath: '',
+  ogImageMedia: null,
+  twitterCard: 'summary_large_image',
+  robotsIndex: true,
+  robotsFollow: true,
+  robotsExtra: {},
+  focusKeywords: ['k'],
+  emitLegacyMetaKeywords: false,
+  llmsInclude: true,
+};
+
+// ---- buildPostFields ------------------------------------------------------
+// The whole point of the function, asserted against the door it feeds: the
+// payload the form produces must be a payload BOTH doors accept. A `''` left
+// on `heroStaticPath` is refused by the path regex, so this is not a
+// hypothetical.
+ok('the form fixture builds a payload the draft door accepts', blogDraftSchema.safeParse(buildPostFields(FORM)).success);
+ok('and one the publish door accepts (fixture guard)', blogPublishSchema.safeParse(buildPostFields(FORM)).success);
+
+// Every nullable column, empty in the form, must arrive as null. Written as a
+// sweep so a nullable column added later has to be added here to pass.
+eq(
+  'every empty nullable field becomes null, never an empty string',
+  (() => {
+    const built = buildPostFields({
+      ...FORM,
+      serviceSlug: '',
+      heroStaticPath: '',
+      heroCaption: '',
+      canonicalOverride: '',
+      ogImageStaticPath: '',
+    }) as Record<string, unknown>;
+    return ['serviceSlug', 'heroStaticPath', 'heroCaption', 'canonicalOverride', 'ogImageStaticPath']
+      .filter((key) => built[key] !== null);
+  })(),
+  [],
+);
+// A field holding only spaces is empty too: the draft door refuses a
+// whitespace-only value on anything with a minimum, and a whitespace-only
+// path or URL is malformed whatever the minimum.
+eq(
+  'a whitespace-only nullable field is also null',
+  buildPostFields({ ...FORM, heroCaption: '   ' }).heroCaption,
+  null,
+);
+// And a value that IS there survives, trimmed. (Without this the assertion
+// above would pass on a function that returned null for everything.)
+eq(
+  'a filled nullable field survives, trimmed',
+  buildPostFields({ ...FORM, heroCaption: '  Under the picture  ' }).heroCaption,
+  'Under the picture',
+);
+eq(
+  'an empty robotsExtra becomes null, the value all 38 imported rows carry',
+  buildPostFields({ ...FORM, robotsExtra: {} }).robotsExtra,
+  null,
+);
+eq(
+  'and a non-empty one is passed through whole',
+  buildPostFields({ ...FORM, robotsExtra: { noarchive: true } }).robotsExtra,
+  { noarchive: true },
+);
+// The snapshot the editor compares for equality is `JSON.stringify` of this
+// object, so the KEY ORDER is part of the contract: the same values in a
+// different order do not compare equal, and every save would look dirty.
+eq(
+  'the payload key order is fixed',
+  Object.keys(buildPostFields(FORM)).join(','),
+  'slug,title,description,categorySlug,authorSlug,serviceSlug,heroStaticPath,heroMedia,heroAlt,heroCaption,keyTakeaways,faqs,sources,entities,relatedSlugs,seoTitle,seoDescription,canonicalOverride,ogTitle,ogDescription,ogImageStaticPath,ogImageMedia,twitterCard,robotsIndex,robotsFollow,robotsExtra,focusKeywords,emitLegacyMetaKeywords,llmsInclude,body',
+);
+// Twice over the same form is byte-identical, which is what makes an unchanged
+// document read as saved rather than as one more autosave every 1.5 seconds.
+eq(
+  'the same form builds the same bytes twice',
+  JSON.stringify(buildPostFields(FORM)) === JSON.stringify(buildPostFields(FORM)),
+  true,
+);
+// `customSchema` has no editor and survives every save by never being named.
+// The payload is `.strict()`-parsed, so naming it would be a refusal rather
+// than a silent overwrite, but the absence is the mechanism and is asserted.
+ok('the payload never carries customSchema', !('customSchema' in buildPostFields(FORM)));
+
+// ---- compactPostLists -----------------------------------------------------
+// The asymmetry IS the function: an entirely blank row is an affordance, a
+// half-filled one is incomplete data the publish door is right to refuse.
+{
+  const messy = compactPostLists({
+    keyTakeaways: ['real', '', '   '],
+    focusKeywords: ['  ', 'seo'],
+    faqs: [
+      { question: 'q', answer: 'a' },
+      { question: '', answer: '' },
+      { question: ' ', answer: '\t' },
+      { question: 'half', answer: '' },
+    ],
+    sources: [
+      { title: 't', href: 'https://a.b' },
+      { title: '', href: '' },
+      { title: 'half', href: '' },
+    ],
+    entities: [
+      { name: 'n', sameAs: ['https://a.b', ''], primary: true },
+      { name: '', sameAs: ['', '  '], primary: false },
+      { name: 'named but unlinked', sameAs: [''], primary: false },
+    ],
+  });
+  eq('a blank takeaway is dropped and a real one kept', messy.keyTakeaways, ['real']);
+  eq('a blank keyword is dropped', messy.focusKeywords, ['seo']);
+  eq(
+    'an entirely blank FAQ is dropped and a HALF-filled one survives',
+    messy.faqs,
+    [
+      { question: 'q', answer: 'a' },
+      { question: 'half', answer: '' },
+    ],
+  );
+  eq(
+    'the same rule for a source',
+    messy.sources,
+    [
+      { title: 't', href: 'https://a.b' },
+      { title: 'half', href: '' },
+    ],
+  );
+  eq(
+    'an entity drops its blank links, and a named-but-unlinked one survives',
+    messy.entities,
+    [
+      { name: 'n', sameAs: ['https://a.b'], primary: true },
+      { name: 'named but unlinked', sameAs: [], primary: false },
+    ],
+  );
+}
+// The refusal the drop exists to prevent, stated as the schema's own answer:
+// the DRAFT door refuses a whitespace-only array item, which is why an empty
+// row can never be sent.
+ok(
+  'the draft door really refuses a whitespace-only takeaway (fixture guard)',
+  !blogDraftSchema.safeParse({ ...POST, keyTakeaways: [' '] }).success,
+);
+ok(
+  'and a whitespace-only FAQ question',
+  !blogDraftSchema.safeParse({ ...POST, faqs: [{ question: ' ', answer: 'a' }] }).success,
+);
+// A trailing blank row is exactly what a writer leaves behind, and the payload
+// built from it is accepted.
+ok(
+  'a form carrying one empty row of everything still builds an acceptable payload',
+  blogDraftSchema.safeParse(
+    buildPostFields({
+      ...FORM,
+      keyTakeaways: [...FORM.keyTakeaways, ''],
+      focusKeywords: [...FORM.focusKeywords, ''],
+      faqs: [...FORM.faqs, { question: '', answer: '' }],
+      sources: [...FORM.sources, { title: '', href: '' }],
+      entities: [...FORM.entities, { name: '', sameAs: [''], primary: false }],
+    }),
+  ).success,
+);
+
+// ---- The schedule's minute bound ------------------------------------------
+// SPRING and FALL are the two Vancouver transition days section 10 already
+// pins. The lengths are asserted first, or every clamp below would be a
+// statement about a 1440-minute day.
+eq('a spring-forward day is 1380 minutes long', dayLengthMinutes(STUDIO_TZ, SPRING), 1380);
+eq('a fall-back day is 1500', dayLengthMinutes(STUDIO_TZ, FALL), 1500);
+eq('an ordinary day is 1440', dayLengthMinutes(STUDIO_TZ, '2026-06-15'), 1440);
+eq('and Tehran, which has no DST, is 1440 on both of those days', [
+  dayLengthMinutes(TEHRAN, SPRING),
+  dayLengthMinutes(TEHRAN, FALL),
+], [1440, 1440]);
+
+// THE REGRESSION, in one line: 23:00 on the short day is pulled back to the
+// last minute the day really has.
+eq('23:00 on the spring-forward day clamps to 22:59', clampDayMinutes(STUDIO_TZ, SPRING, 23 * 60), 1379);
+eq('the same 23:00 on an ordinary day is untouched', clampDayMinutes(STUDIO_TZ, '2026-06-15', 23 * 60), 1380);
+eq('and on the 25-hour day a picker could not even reach the end', clampDayMinutes(STUDIO_TZ, FALL, 23 * 60), 1380);
+eq('a negative minute floors at midnight', clampDayMinutes(STUDIO_TZ, SPRING, -30), 0);
+eq('and a value that is not a number does too', clampDayMinutes(STUDIO_TZ, SPRING, Number.NaN), 0);
+
+// The property that matters, swept: a scheduled post fires on the day it was
+// scheduled for, every minute of every one of the three days, in both zones.
+{
+  let escaped = 0;
+  let sweptPicks = 0;
+  for (const tz of [STUDIO_TZ, TEHRAN]) {
+    for (const key of [SPRING, FALL, '2026-06-15']) {
+      // 0 to 1439 is what a native <input type="time"> can produce, whatever
+      // the day's real length is, which is exactly the input the clamp exists
+      // to survive.
+      for (let m = 0; m < 1440; m += 5) {
+        sweptPicks++;
+        if (studioDayFor(scheduleInstant(tz, key, m)) !== dayKeyIn(STUDIO_TZ, scheduleInstant(tz, key, m))) escaped++;
+        if (dayKeyIn(tz, scheduleInstant(tz, key, m)) !== key) escaped++;
+      }
+    }
+  }
+  eq('the clamp sweep really ran', sweptPicks, 2 * 3 * 288);
+  eq('no pickable time escapes the day it was picked on', escaped, 0);
+}
+// And the UNCLAMPED helper still escapes, which is what proves the sweep above
+// is testing the clamp rather than a property `dayTimeIn` already had.
+ok(
+  'the raw helper does escape, so the sweep is not vacuous',
+  dayKeyIn(STUDIO_TZ, dayTimeIn(STUDIO_TZ, SPRING, 23 * 60)) !== SPRING,
+);
+
+// The readout's whole reason: a morning time picked in Tehran is the PREVIOUS
+// day on the studio's clock, which is the day the public blog would print.
+eq(
+  'a Tehran writer picking 09:00 lands on the previous Vancouver day',
+  studioDayFor(scheduleInstant(TEHRAN, '2026-06-15', 9 * 60)),
+  '2026-06-14',
+);
+eq(
+  'while a Vancouver writer picking 09:00 stays on the day they picked',
+  studioDayFor(scheduleInstant(STUDIO_TZ, '2026-06-15', 9 * 60)),
+  '2026-06-15',
+);
+
+// The two time-field converters. `null` rather than a coerced number is what
+// keeps a half-typed value from jumping the stored minute to midnight.
+eq('540 renders as 09:00', minutesToTimeValue(540), '09:00');
+eq('0 renders as 00:00', minutesToTimeValue(0), '00:00');
+eq('1439 renders as 23:59', minutesToTimeValue(1439), '23:59');
+eq('09:00 parses back to 540', timeValueToMinutes('09:00'), 540);
+eq(
+  'and every minute of a day round-trips',
+  (() => {
+    for (let m = 0; m < 1440; m++) {
+      if (timeValueToMinutes(minutesToTimeValue(m)) !== m) return m;
+    }
+    return -1;
+  })(),
+  -1,
+);
+eq(
+  'a malformed time is refused rather than coerced',
+  ['', '9:00', '24:00', '12:60', '0900', 'ab:cd'].map((v) => timeValueToMinutes(v)),
+  [null, null, null, null, null, null],
+);
+
+// ---- The slug follow ------------------------------------------------------
+// Armed only while the slug is still the generated placeholder AND the post is
+// not locked. Both halves, because either one alone would rewrite an address
+// somebody chose or one the door then refuses.
+eq('a placeholder slug on an unlocked post arms the follow', slugFollowArms({ slug: newDraftSlug(() => 'abcdef12'), slugLocked: false }), 'armed');
+eq('a chosen slug does not', slugFollowArms({ slug: 'a-real-slug', slugLocked: false }), 'off');
+eq('and neither does a placeholder on a locked post', slugFollowArms({ slug: newDraftSlug(() => 'abcdef12'), slugLocked: true }), 'off');
+
+// The transition table, swept. `off` is ABSORBING: that is the "never
+// re-arms" rule, and writing it as a sweep is what forces an event added
+// later through the decision rather than letting it inherit one.
+{
+  const states: SlugFollow[] = ['armed', 'off'];
+  const events: SlugFollowEvent[] = ['title-edited', 'slug-edited', 'published'];
+  let sweptFollow = 0;
+  for (const state of states) {
+    for (const event of events) {
+      sweptFollow++;
+      const want: SlugFollow = state === 'off' ? 'off' : event === 'title-edited' ? 'armed' : 'off';
+      eq(`slug follow ${state} + ${event} -> ${want}`, nextSlugFollow(state, event), want);
+    }
+  }
+  eq('the slug-follow sweep covered every pair', sweptFollow, states.length * events.length);
+
+  // The property the sweep implies, stated outright over every sequence of
+  // three events: once anything but a title edit has happened, no amount of
+  // typing in the title brings the follow back.
+  let reArmed = 0;
+  let sequences = 0;
+  for (const a of events) {
+    for (const b of events) {
+      for (const c of events) {
+        sequences++;
+        const sequence = [a, b, c];
+        const end = sequence.reduce<SlugFollow>((state, event) => nextSlugFollow(state, event), 'armed');
+        if (sequence.some((event) => event !== 'title-edited') && end !== 'off') reArmed++;
+      }
+    }
+  }
+  eq('every three-event sequence was walked', sequences, events.length ** 3);
+  eq('and none of them re-armed the follow', reArmed, 0);
+  eq(
+    'while three title edits in a row leave it armed (so the sweep is not vacuous)',
+    (['title-edited', 'title-edited', 'title-edited'] as SlugFollowEvent[]).reduce<SlugFollow>(
+      (state, event) => nextSlugFollow(state, event),
+      'armed',
+    ),
+    'armed',
+  );
+}
+
+// What the follow actually does with a title, which is where its three
+// refusals live. Each one is a different way the address could be corrupted,
+// and none of them shows on screen: the field simply holds a value the door
+// then refuses.
+{
+  const armed = { slug: 'draft-abcdef12', follow: 'armed' as SlugFollow, slugLocked: false };
+  eq('an armed follow takes the candidate', nextSlug(armed, 'a-real-title'), 'a-real-title');
+  eq('a follow that is off keeps the slug', nextSlug({ ...armed, follow: 'off' }, 'a-real-title'), 'draft-abcdef12');
+  eq('a locked post keeps it whatever the state says', nextSlug({ ...armed, slugLocked: true }, 'a-real-title'), 'draft-abcdef12');
+  // Clearing the title slugifies to '', which no door accepts. The placeholder
+  // stays rather than every later autosave being refused on a field nobody
+  // touched.
+  eq('an empty candidate keeps the placeholder', nextSlug(armed, ''), 'draft-abcdef12');
+  ok(
+    'and the placeholder it keeps is one the door would take (fixture guard)',
+    blogSlugSchema.safeParse(nextSlug(armed, '')).success,
+  );
+}
+
+// ---- What the bar offers --------------------------------------------------
+// Swept over every status x both histories and compared against
+// `transitionProblem` INDEPENDENTLY, so the derivation cannot drift from the
+// leaf the database's CHECK constraints stand behind.
+{
+  let sweptActions = 0;
+  for (const status of BLOG_POST_STATUSES) {
+    for (const everPublished of [false, true]) {
+      sweptActions++;
+      const history = { everPublished };
+      const actions = blogEditorActions(status, history);
+      const can = (to: BlogPostStatus) => transitionProblem(status, to, history) === null;
+      eq(`${status}/${everPublished}: publish offered iff the move is allowed`, actions.publish, can('published'));
+      eq(`${status}/${everPublished}: schedule offered iff the move is allowed`, actions.schedule, can('scheduled'));
+      eq(`${status}/${everPublished}: unpublish offered iff the move is allowed`, actions.unpublish, can('archived'));
+      eq(`${status}/${everPublished}: trash offered iff the move is allowed`, actions.trash, can('trash'));
+      // The three that are not transitions carry their own condition.
+      eq(`${status}/${everPublished}: reschedule only on a scheduled post`, actions.reschedule, status === 'scheduled');
+      eq(`${status}/${everPublished}: unschedule only on a scheduled post`, actions.unschedule, status === 'scheduled');
+      eq(`${status}/${everPublished}: the date may be amended only on a live post`, actions.amendDate, status === 'published');
+      eq(`${status}/${everPublished}: restore only from the bin`, actions.restore, status === 'trash');
+      eq(`${status}/${everPublished}: saving is refused only in the bin`, actions.save, status !== 'trash');
+    }
+  }
+  eq('the action sweep covered every status x history', sweptActions, BLOG_POST_STATUSES.length * 2);
+}
+// Purge is deliberately ABSENT from the editor: it is the one irreversible act
+// in this domain and stays on the list, behind its own confirm, on a row
+// somebody has already binned.
+ok(
+  'the editor offers no purge',
+  !('purge' in blogEditorActions('trash', { everPublished: false })),
+);
+
+// The primary button: one action, one label, returned as a pair so a button
+// cannot say Update and open the schedule fields.
+eq('a draft publishes', primaryAction('draft'), { action: 'publish', label: 'Publish' });
+eq('an archived post publishes again', primaryAction('archived'), { action: 'publish', label: 'Publish' });
+eq('a live post updates', primaryAction('published'), { action: 'update', label: 'Update' });
+eq('a scheduled post moves its schedule', primaryAction('scheduled'), { action: 'reschedule', label: 'Schedule' });
+eq('and a binned post has no primary action at all', primaryAction('trash'), null);
+// The coupling the bar depends on: it renders the primary button only when
+// `actions.publish` is true, so a status with a primary and no publish would
+// compute a button nobody could press.
+eq(
+  'every status with a primary action can also reach the publish door',
+  BLOG_POST_STATUSES.filter(
+    (status) =>
+      primaryAction(status) !== null &&
+      !blogEditorActions(status, { everPublished: true }).publish,
+  ),
+  [],
+);
+// The bar draws the primary button only when the flag for the action it FIRES
+// is set, and the pairing is a map rather than a condition in the bar. The bar
+// used to gate every primary on `publish`, which is right for two of the three
+// and right for the third only because `scheduled -> published` happens to be
+// allowed: forbidding that later would have removed the Schedule button from
+// every scheduled post with nothing red.
+eq(
+  'the gate map covers every primary action, and nothing else',
+  Object.keys(PRIMARY_ACTION_GATE).sort(),
+  ['publish', 'reschedule', 'update'],
+);
+eq(
+  'and every status whose primary the bar draws may really take that move',
+  BLOG_POST_STATUSES.filter((status) => {
+    const primary = primaryAction(status);
+    if (primary === null) return false;
+    return !blogEditorActions(status, { everPublished: true })[PRIMARY_ACTION_GATE[primary.action]];
+  }),
+  [],
+);
+// The one that would have caught the bug: a scheduled post's primary is gated
+// on `reschedule`, NOT on `publish`.
+eq('a scheduled post is gated on rescheduling', PRIMARY_ACTION_GATE.reschedule, 'reschedule');
+
+// The label and the action are a BIJECTION, which is the property the pair
+// exists to hold. Two statuses may share a label (a draft and an archived post
+// both say Publish and both publish), but one word must never open two
+// different dialogs, and one dialog must never wear two words.
+{
+  const pairs = BLOG_POST_STATUSES.map((status) => primaryAction(status)).filter(
+    (pair): pair is NonNullable<ReturnType<typeof primaryAction>> => pair !== null,
+  );
+  ok('the primary sweep found pairs (fixture guard)', pairs.length === BLOG_POST_STATUSES.length - 1);
+  eq(
+    'no label opens two different dialogs',
+    [...new Set(pairs.map((p) => p.label))].filter(
+      (label) => new Set(pairs.filter((p) => p.label === label).map((p) => p.action)).size !== 1,
+    ),
+    [],
+  );
+  eq(
+    'and no dialog is reached by two different words',
+    [...new Set(pairs.map((p) => p.action))].filter(
+      (action) => new Set(pairs.filter((p) => p.action === action).map((p) => p.label)).size !== 1,
+    ),
+    [],
+  );
+  ok('no primary label carries an em dash', pairs.every((pair) => !pair.label.includes('—')));
+}
+
+// ---- Where a refused field lives ------------------------------------------
+// Every field the draft door accepts must be claimed by a pane, or a refusal
+// names a control the writer is never shown.
+{
+  const shape = Object.keys(blogDraftSchema.shape);
+  ok('read the draft schema shape (fixture guard)', shape.length >= 25);
+  eq(
+    'every field the door accepts is claimed by a pane',
+    shape.filter((field) => !['post', 'seo', 'canvas'].includes(inspectorPaneFor(field))),
+    [],
+  );
+  // The canvas set is the one that has to be right: RULING 31 put the hero's
+  // image, description and caption on the canvas with `HeroField`, not in the
+  // Post pane, and this is where that decision is written down.
+  eq(
+    'the canvas owns the title, the body and the whole hero',
+    shape.filter((field) => inspectorPaneFor(field) === 'canvas').sort(),
+    ['body', 'heroAlt', 'heroCaption', 'heroMedia', 'heroStaticPath', 'title'],
+  );
+  eq(
+    'the SEO pane owns exactly the search and social fields',
+    shape.filter((field) => inspectorPaneFor(field) === 'seo').sort(),
+    [
+      'canonicalOverride',
+      'emitLegacyMetaKeywords',
+      'focusKeywords',
+      'ogDescription',
+      'ogImageMedia',
+      'ogImageStaticPath',
+      'ogTitle',
+      'robotsExtra',
+      'robotsFollow',
+      'robotsIndex',
+      'seoDescription',
+      'seoTitle',
+      'twitterCard',
+    ],
+  );
+  // A per-entry failure is keyed `faqs.2.answer` by flattenBlogIssues, so the
+  // FIRST segment is what decides.
+  eq('a per-entry key resolves by its first segment', inspectorPaneFor('faqs.2.answer'), 'post');
+  eq('and so does a robots key', inspectorPaneFor('robotsExtra.max-snippet'), 'seo');
+  // Anything unrecognised falls to the Post pane rather than throwing: a wrong
+  // tab costs a glance, and `_form` is not a field at all.
+  eq('an unknown key falls to the Post pane', inspectorPaneFor('_form'), 'post');
+}
+
+// ---- The word-count notice ------------------------------------------------
+// Said once, on the first save of an imported post, because the editor's
+// formula is not the importer's and the difference moves the visible byline.
+//
+// THE IMPORTED GATE IS THE HALF THAT MATTERS, and it is the defect the review
+// found: `previousWordCount` is the working row's count read immediately
+// before the write, so ANY edit at all moves it. Without the gate a writer
+// adding one sentence to a mature post gets a twelve-second toast about an
+// import formula, on a post that was never imported, in every session.
+eq('a post the editor has already written to says nothing', describeWordCountChange(1438, 1214, false), null);
+eq('nor does a brand-new post, whose count moves from nothing', describeWordCountChange(0, 900, false), null);
+eq('nothing is said when the count did not move', describeWordCountChange(1438, 1438, true), null);
+{
+  const down = describeWordCountChange(1438, 1214, true) ?? '';
+  ok('a drop names both numbers', down.includes('1,438') && down.includes('1,214'));
+  ok('and says which way it went', down.includes('down') && !down.includes(' up '));
+  ok('a rise says the other', (describeWordCountChange(100, 200, true) ?? '').includes('up'));
+  ok('the sentence carries no em dash', !down.includes('—'));
+  ok('and it explains what the editor counts', down.toLowerCase().includes('faq'));
+}
+
+// ---- The word-count readout -----------------------------------------------
+// It states the STORED count, which is the number the byline is derived from,
+// and says so while there is unsaved work rather than letting a stale figure
+// read as current.
+eq('the readout names the count and the reading time', wordCountLine(1214, false), '1,214 words, about 7 min read.');
+eq('one word is singular', wordCountLine(1, false), '1 word, about 1 min read.');
+eq('an empty post still reads as a minute', wordCountLine(0, false), '0 words, about 1 min read.');
+ok('and it says when the figure is not current', wordCountLine(1214, true).includes('at the last save'));
+ok('while a saved post says nothing of the sort', !wordCountLine(1214, false).includes('at the last save'));
+ok('no em dash in the readout', !wordCountLine(1214, true).includes('—'));
+
+// ---- Whether the stored count is still the importer's ---------------------
+// The fold over the provenance row. Both halves matter and the imported one is
+// the half that is easy to drop: a post created in the editor has no revisions
+// at all until its first explicit Save, so `edited !== true` is true of it too.
+// The `--db` half below runs the real SQL that fills this row.
+const PROVENANCE = { imported: true, edited: false, importWordCount: 1438, workingWordCount: 1438 };
+eq('imported, unedited, and the count still the one it wrote', isLegacyWordCount(PROVENANCE), true);
+eq('one editor revision anywhere, and it is not', isLegacyWordCount({ ...PROVENANCE, edited: true }), false);
+eq('a post made in the editor was never imported', isLegacyWordCount({ ...PROVENANCE, imported: false }), false);
+// THE THIRD READING. `saveDraft` writes no revision, so the two flags above
+// survive any number of autosaves: without this a writer could type, get the
+// notice, leave without an explicit save, reload, type one more word and get
+// the same twelve-second toast for a two-word delta between two numbers that
+// are both already the editor's. An autosave moves the working row's count and
+// leaves the import revision's alone.
+eq(
+  'once an autosave has moved the working count, the notice is spent',
+  isLegacyWordCount({ ...PROVENANCE, workingWordCount: 1214 }),
+  false,
+);
+// `bool_or` over an empty set is NULL, and the join returns no row at all for
+// a post with no revisions: a brand-new draft, whose count moves from nothing
+// on its first save.
+eq('no revisions at all is not the importer\'s either', isLegacyWordCount({ imported: null, edited: null, importWordCount: null, workingWordCount: null }), false);
+eq('and neither is a post that is not there', isLegacyWordCount(undefined), false);
+// Two nulls are not equal to each other. Without the explicit null test a post
+// with revisions but no IMPORT one would read as legacy the moment its working
+// count was also null, which is a comparison nothing else would refuse.
+eq(
+  'a null import count never matches, even against another null',
+  isLegacyWordCount({ imported: true, edited: false, importWordCount: null, workingWordCount: null }),
+  false,
+);
+
+// ---- The snippet preview --------------------------------------------------
+eq('a short title is shown whole', snippetClamp('Short enough', 60), 'Short enough');
+eq('and it is trimmed', snippetClamp('  padded  ', 60), 'padded');
+{
+  const long = 'x'.repeat(120);
+  const cut = snippetClamp(long, 60);
+  ok('a long one is cut to the target', cut.length <= 61);
+  ok('and says it was cut', cut.endsWith('…'));
+  ok('the clamp does not change the real length anywhere', long.length === 120);
+}
+
+// ---- The save indicator ---------------------------------------------------
+{
+  const labels = Object.values(BLOG_SAVE_STATE_LABELS);
+  eq('there are four save states', labels.length, 4);
+  eq('each has its own words', new Set(labels).size, 4);
+  ok('and none carries an em dash', labels.every((label) => !label.includes('—')));
+}
+
+// ---- The editor screen's own source ---------------------------------------
+// A DIRECTORY READ rather than a list of filenames, the reason section 11's
+// sweep gives: a hand-written list covers the files that existed when somebody
+// wrote it, and the next component added to this screen would sit outside a
+// sweep that still looked complete. The `editor/` subtree has its own sweep
+// above, so this one is the top level plus the two route files and the leaf.
+{
+  const screenDir = new URL('../src/components/Admin/blogs/', import.meta.url);
+  const screenFiles = readdirSync(screenDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
+  ok('the blogs component directory read found its files (fixture guard)', screenFiles.length >= 12);
+  ok(
+    'and it reached the editor screen itself (fixture guard)',
+    screenFiles.includes('PostEditor.tsx') && screenFiles.includes('EditorTopBar.tsx'),
+  );
+
+  const EDITOR_SCREEN: ReadonlyArray<readonly [string, string]> = [
+    ...screenFiles.map(
+      (name) => [name, readRepoFile(`../src/components/Admin/blogs/${name}`)] as const,
+    ),
+    ['lib/blogEditorFields.ts', readRepoFile('../src/lib/blogEditorFields.ts')],
+    ['blogs/[id]/page.tsx', readRepoFile('../src/app/(admin)/admin/(protected)/blogs/[id]/page.tsx')],
+    ['blogs/[id]/loading.tsx', readRepoFile('../src/app/(admin)/admin/(protected)/blogs/[id]/loading.tsx')],
+    ['blogs/new/page.tsx', readRepoFile('../src/app/(admin)/admin/(protected)/blogs/new/page.tsx')],
+  ];
+
+  for (const [label, src] of EDITOR_SCREEN) {
+    ok(`read ${label} (drift guard)`, src.length > 100);
+  }
+
+  // The copy rule. Scanned over the whole stripped source rather than string
+  // literals only, for section 11's reason: an em dash written into JSX TEXT
+  // is not a string literal at all, and this screen is mostly JSX.
+  for (const [label, src] of EDITOR_SCREEN) {
+    eq(
+      `no em dash in ${label} outside its comments`,
+      [...stripComments(src).replace(EMPTY_CELL_GLYPH, '').matchAll(/.{0,30}—.{0,30}/g)].map(
+        (match) => match[0],
+      ),
+      [],
+    );
+  }
+
+  // THE BUNDLE RULE, and it is the one thing on this screen that would cost
+  // every visitor rather than every writer. `@/lib/blogBody` builds the whole
+  // Tiptap document schema at module scope and `@/lib/blogPostSchema` imports
+  // it; Turbopack merges every EAGERLY referenced client module into one
+  // shared chunk group that all 86 routes load. So a value import from either
+  // one, anywhere the editor page reaches synchronously, puts ProseMirror in
+  // front of the marketing site.
+  //
+  // NOTHING on this screen may hold one. The only place in the feature that
+  // reaches `blogBody` is the `editor/` subtree, which has its own sweep and
+  // is reached only through `BodyEditorLazy` (pinned by the tree scan in
+  // section 11 and by the single-boundary assertion below).
+  const valueImportsFrom = (src: string, specifier: string): boolean =>
+    [...stripComments(src).matchAll(/import\s+([\s\S]*?)from\s+'([^']+)'/g)].some(
+      ([, clause, from]) => from === specifier && !/^type\s/.test(clause.trim()),
+    );
+
+  for (const specifier of ['@/lib/blogBody', '@/lib/blogPostSchema']) {
+    eq(
+      `nothing on the editor screen value-imports ${specifier}`,
+      EDITOR_SCREEN.filter(([, src]) => valueImportsFrom(src, specifier)).map(([label]) => label),
+      [],
+    );
+  }
+  // The guard's own guard: the detector must SEE a value import, or the
+  // assertion above passes on a function that always answers false.
+  ok(
+    'the import detector really sees a value import (fixture guard)',
+    valueImportsFrom("import { wordCount } from '@/lib/blogBody';", '@/lib/blogBody'),
+  );
+  ok(
+    'and does not mistake a type-only one for it',
+    !valueImportsFrom("import type { BlogDoc } from '@/lib/blogBody';", '@/lib/blogBody'),
+  );
+
+  // ONE lazy boundary onto that module, not two, and the difference was
+  // measured rather than reasoned about. A second `dynamic()` import reaching
+  // `blogBody` (the obvious way to render a live word count) made Turbopack
+  // emit a SECOND 522,111-byte ProseMirror chunk beside the body editor's, both
+  // listed in this route's react-loadable-manifest. So the counter reads the
+  // number the save door returns instead, and this is what keeps it that way.
+  //
+  // It matches the `import(` CALL EXPRESSION rather than a `dynamic(...)`
+  // wrapper around it, and that widening came out of mutation testing: the
+  // narrow form only saw a boundary opened through a local binding literally
+  // named `dynamic`, so `import dyn from 'next/dynamic'` (or a bare
+  // `await import(...)`, which costs the same chunk) walked straight past it.
+  // A static `import x from '…'` cannot match, because the paren has to follow
+  // the keyword immediately.
+  const LAZY_EDITOR_IMPORT = /import\(\s*['"][^'"]*(blogBody|blogs\/editor\/)/;
+  eq(
+    'exactly one file in the whole tree opens a lazy boundary onto the editor chunk',
+    readdirSync(new URL('../src/', import.meta.url), { recursive: true })
+      .map((entry) => String(entry))
+      .filter((entry) => /\.(ts|tsx)$/.test(entry))
+      .filter((entry) =>
+        LAZY_EDITOR_IMPORT.test(readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8')),
+      )
+      .sort(),
+    ['components/Admin/blogs/editor/BodyEditorLazy.tsx'],
+  );
+  // The detector's own guard: a static import must NOT read as a lazy one, or
+  // the assertion above would name every file that mentions the module.
+  eq(
+    'the lazy-import detector tells a dynamic import from a static one',
+    [
+      LAZY_EDITOR_IMPORT.test("const X = dynamic(() => import('@/lib/blogBody'));"),
+      LAZY_EDITOR_IMPORT.test("const X = dyn(() => import('@/lib/blogBody'));"),
+      LAZY_EDITOR_IMPORT.test("await import('@/components/Admin/blogs/editor/BodyEditor');"),
+      LAZY_EDITOR_IMPORT.test("import { wordCount } from '@/lib/blogBody';"),
+    ],
+    [true, true, true, false],
+  );
+
+  // The canvas skeleton is drawn twice, by `BodyEditorLazy` while the editor
+  // chunk loads and by `BlogEditorSkeleton` while the page does, and the two
+  // must be the same height or the article column steps twice on the way in.
+  // Both take the boxes from `editorBox.ts`; neither may hold the literal. The
+  // review caught exactly this copy after the block's own comment claimed
+  // otherwise.
+  for (const [label, src] of [
+    ['AdminSkeletons.tsx', SKELETONS_SRC],
+    ['BodyEditorLazy.tsx', LAZY_SRC],
+  ] as const) {
+    eq(
+      `${label} imports the canvas skeleton boxes rather than copying them`,
+      [editorSkeletonLine, editorSkeletonToolbar].filter((box) => src.includes(box)),
+      [],
+    );
+  }
+  // The guard's own guard, and it tests USAGE rather than mention: a dead
+  // import would satisfy a substring check while a near-miss literal drew a
+  // different box, and an unused import is only a lint WARNING in this repo.
+  // Both tokens have to reach a className, through `cn(` or directly.
+  const drawsWith = (src: string, token: string) =>
+    new RegExp(`(?:cn\\(\\s*${token}\\b|className=\\{${token}\\})`).test(src);
+  eq(
+    'and both files really RENDER those boxes rather than just importing them',
+    [
+      drawsWith(LAZY_SRC, 'editorSkeletonLine'),
+      drawsWith(LAZY_SRC, 'editorSkeletonToolbar'),
+      drawsWith(SKELETONS_SRC, 'editorSkeletonLine'),
+      drawsWith(SKELETONS_SRC, 'editorSkeletonToolbar'),
+      // A mention that is not a render must NOT satisfy it.
+      drawsWith("import { editorSkeletonLine } from 'x';", 'editorSkeletonLine'),
+    ],
+    [true, true, true, true, false],
+  );
+
+  // THE CALL SITE, not just the parameter. The suite already pins the fold,
+  // the SQL and the fact that `describeWordCountChange` takes a gate; none of
+  // that notices the editor passing a literal `true` for it, which reinstates
+  // the whole defect (the notice back on every ordinary edit to every post)
+  // with the suite green. Found by mutation testing, which is the reason this
+  // branch does it.
+  {
+    const editor = stripComments(readRepoFile('../src/components/Admin/blogs/PostEditor.tsx'));
+    const calls = [...editor.matchAll(/describeWordCountChange\(([\s\S]*?)\)/g)].map((m) => m[1]);
+    eq('the editor calls describeWordCountChange exactly once (fixture guard)', calls.length, 1);
+    ok(
+      'and it passes the server-derived flag, never a literal',
+      calls[0]?.includes('post.wordCountIsLegacy') === true,
+    );
+
+    // Minor D's fix, the same class: the amend dialog seeds its day when it
+    // OPENS, from the current props. Seeded once at mount instead, a post
+    // published during the session opens the field blank under a sentence
+    // stating the day the post says.
+    const amend = region(editor, 'const openAmend', '};', 'openAmend');
+    ok('the amend dialog seeds its day from the current props when it opens', amend.includes('post.publishedDayKey'));
+    // Exactly one CALL, and it is the one inside `openAmend`. The dialog's own
+    // field passes the setter by reference (`onChange={setAmendDay}`), which is
+    // the writer typing rather than the screen seeding, so it is not a call.
+    eq('the day is seeded from exactly one place', [...editor.matchAll(/setAmendDay\(/g)].length, 1);
+    ok('and that place is the opener', amend.includes('setAmendDay('));
+    eq('the day is not captured at mount', occurrences(editor, "useState(post.publishedDayKey)"), 0);
+  }
+
+  // No screen may build a `Date` in the browser: every instant the editor
+  // renders is a finished string resolved once on the server, and the two
+  // date controls take a day key and a minute. The one exception is the PAGE,
+  // which is the server component that resolves "today" for them.
+  for (const [label, src] of EDITOR_SCREEN) {
+    if (label === 'blogs/[id]/page.tsx') continue;
+    eq(`${label} constructs no Date in the browser`, occurrences(stripComments(src), 'new Date('), 0);
+  }
+
+  // And no success path refreshes the router. Every blog door revalidates
+  // `/admin` itself, so the fresh tree already rides back on the action's own
+  // response; refreshing again is roughly ten more Neon round trips for a
+  // render we have.
+  //
+  // Matched on the CALL, `.refresh(` on any identifier, not on the literal
+  // `router.refresh(` this started as. The review proved the narrow form with
+  // a real defect: `const nav = useRouter()` then `nav.refresh()` on the ok
+  // branch, and the whole check stayed green. Nothing on this screen calls
+  // `.refresh(` on anything, so the broad form costs no exception, and the
+  // `useRouter` IMPORT is deliberately not banned: `router.push` is a
+  // legitimate thing for this screen to need.
+  for (const [label, src] of EDITOR_SCREEN) {
+    eq(
+      `${label} never calls .refresh() on anything`,
+      [...stripComments(src).matchAll(/\.refresh\s*\(/g)].length,
+      0,
+    );
+  }
+  // The detector's own guard: it must see the aliased call, or the sweep above
+  // passes on a regex that matches nothing.
+  eq(
+    'the refresh detector sees an aliased call as well as the plain one',
+    [
+      /\.refresh\s*\(/.test('router.refresh();'),
+      /\.refresh\s*\(/.test('const nav = useRouter(); nav.refresh();'),
+      /\.refresh\s*\(/.test('const x = 1;'),
+    ],
+    [true, true, false],
+  );
+}
+
+// The route that MINTS a post is a GET, so nothing may prefetch it: a prefetch
+// on hover would be a draft row per hover. The list's own button calls the
+// action directly rather than linking, which is what makes that true today.
+{
+  const NEW_PAGE = readRepoFile('../src/app/(admin)/admin/(protected)/blogs/new/page.tsx');
+  ok('the new-post route calls createPost', NEW_PAGE.includes('createPost('));
+  ok('and gates itself on the blogs area', NEW_PAGE.includes("requireArea('blogs'"));
+  eq(
+    'nothing in the tree LINKS to /admin/blogs/new without disabling prefetch',
+    readdirSync(new URL('../src/', import.meta.url), { recursive: true })
+      .map((entry) => String(entry))
+      .filter((entry) => /\.tsx$/.test(entry))
+      .filter((entry) => {
+        const source = stripComments(
+          readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8'),
+        );
+        // A <Link href="/admin/blogs/new"> without prefetch={false} beside it.
+        return [...source.matchAll(/<Link[\s\S]{0,400}?\/admin\/blogs\/new[\s\S]{0,400}?>/g)].some(
+          (match) => !match[0].includes('prefetch={false}'),
+        );
+      })
+      .sort(),
+    [],
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 12. The real statements, against Neon (--db)
 // ═══════════════════════════════════════════════════════════════════════════
 // Everything above pins a DECISION. This half pins STATEMENTS, and it is the
@@ -6576,6 +7458,110 @@ try {
         { draft: 0, scheduled: 0, published: 0, archived: 0, trash: 0 },
       );
   });
+
+  // ── 17.1 whether a post's stored word count is still the importer's ──────
+  // The gate on the editor's one-time word-count notice, and the SQL behind it
+  // is the importer's own skip rule read from the other end. Wrong in either
+  // direction it is silent: too loose and every ordinary edit to every post
+  // pops a toast about an import formula, too tight and the 38 imported posts
+  // change their visible reading time with nothing said.
+  {
+    const provenance = async (postId: string) => (await selectImportProvenance(db, postId))[0];
+    // The REAL fold, not a twin of it: a hand-copied `imported && !edited` here
+    // could not see a change to `isLegacyWordCount`, which is the "asserting a
+    // copy of the code" shape this file warns about elsewhere.
+    const legacy = async (postId: string) => isLegacyWordCount(await provenance(postId));
+
+    const LEGACY_WORDS = 1438;
+    const importRevision = (postId: string, name: string, words: number) =>
+      insertRevision(db, {
+        postId, reason: 'import', slug: slugOf(name), title: 'Imported',
+        categoryId: catA.id, authorId: authorA.id, publishedAt: null,
+        contentModifiedAt: null, robotsIndex: true, llmsInclude: true, wordCount: words,
+        snapshot: snapshotFor(slugOf(name), 'Imported', null),
+        actorId: null, actorName: 'ZZ-CHECK',
+      });
+
+    // A post created in the editor has NO revisions at all until its first
+    // explicit save. It still answers, and this is the assertion that says so:
+    // there is no GROUP BY, so the query is a scalar aggregate and Postgres
+    // returns exactly one row however empty the join was, with every column
+    // NULL. Reading that as "no row" would have made the fold's `undefined`
+    // branch the one under test instead of its `imported !== true` branch.
+    const fresh = await newDraft('provenance-fresh', 'Fresh');
+    eq('db: a post with no revisions answers one all-null row', await provenance(fresh.id), {
+      imported: null,
+      edited: null,
+      importWordCount: null,
+      workingWordCount: null,
+    });
+    ok('db: and its count is NOT the importer\'s', !(await legacy(fresh.id)));
+
+    const imported = await newDraft('provenance-imported', 'Imported', { wordCount: LEGACY_WORDS });
+    await importRevision(imported.id, 'provenance-imported', LEGACY_WORDS);
+    eq('db: an import-only history reads imported, unedited, and both counts equal', await provenance(imported.id), {
+      imported: true,
+      edited: false,
+      importWordCount: LEGACY_WORDS,
+      workingWordCount: LEGACY_WORDS,
+    });
+    ok('db: so its stored count IS still the importer\'s', await legacy(imported.id));
+
+    // THE AUTOSAVE CASE, and it is the one the flags alone cannot see:
+    // `saveDraft` writes no revision, so both flags still say "imported and
+    // untouched" while the working count has already moved to the editor's.
+    // Through the REAL working-copy door, so this is what an autosave does.
+    const afterAutosave = await updateWorkingCopy(db, imported.id, imported.version, { wordCount: 1214 });
+    ok('db: the autosave landed (fixture guard)', afterAutosave !== null);
+    eq('db: the flags are unmoved by an autosave', {
+      imported: (await provenance(imported.id))?.imported,
+      edited: (await provenance(imported.id))?.edited,
+    }, { imported: true, edited: false });
+    eq('db: but the two counts have diverged', await provenance(imported.id), {
+      imported: true, edited: false, importWordCount: LEGACY_WORDS, workingWordCount: 1214,
+    });
+    ok('db: so the notice is spent, without any explicit save', !(await legacy(imported.id)));
+
+    // One editor save anywhere in the history, and the edited half closes it
+    // permanently. This is the exact predicate scripts/import-blogs.mts skips
+    // on. Asserted on a SEPARATE post whose counts still match, so it is the
+    // edited half doing the work rather than the divergence above.
+    const republished = await newDraft('provenance-edited', 'Edited', { wordCount: LEGACY_WORDS });
+    await importRevision(republished.id, 'provenance-edited', LEGACY_WORDS);
+    ok('db: it starts out as the importer\'s (fixture guard)', await legacy(republished.id));
+    // The save revision records a HIGHER count than the import one, which is
+    // the ordinary case: somebody expanded the article. That is what makes the
+    // `filter (where reason = 'import')` visible at all, and mutation testing
+    // is what found it: without a fixture where the two maxima differ, dropping
+    // the filter is indistinguishable from keeping it.
+    await insertRevision(db, {
+      postId: republished.id, reason: 'save', slug: slugOf('provenance-edited'),
+      title: 'Edited here', categoryId: catA.id, authorId: authorA.id, publishedAt: null,
+      contentModifiedAt: null, robotsIndex: true, llmsInclude: true, wordCount: 2000,
+      snapshot: snapshotFor(slugOf('provenance-edited'), 'Edited here', null),
+      actorId: null, actorName: 'ZZ-CHECK',
+    });
+    eq('db: one non-import revision flips the edited half', (await provenance(republished.id))?.edited, true);
+    eq(
+      'db: and importWordCount stays the IMPORT revisions\' figure, not the newer save\'s',
+      await provenance(republished.id),
+      { imported: true, edited: true, importWordCount: LEGACY_WORDS, workingWordCount: LEGACY_WORDS },
+    );
+    ok('db: and the count stops being the importer\'s, for good', !(await legacy(republished.id)));
+    // Why the filter cannot change the ANSWER today, stated rather than left
+    // to be rediscovered: the fold refuses on `edited` before it ever compares
+    // the counts, so the two maxima can only differ on a post it has already
+    // said no to. The filter is what keeps the column meaning what its name
+    // says, so relaxing that guard later cannot silently make it lie.
+    ok('db: the fold refuses on the edited half before the counts matter',
+      !isLegacyWordCount({ imported: true, edited: true, importWordCount: 1, workingWordCount: 1 }));
+
+    // A post the editor made and saved: revisions, none of them an import.
+    const madeHere = await newDraft('provenance-made', 'Made here');
+    await newRevision(madeHere.id, slugOf('provenance-made'), 'Made here', null);
+    eq('db: a post made in the editor was never imported', (await provenance(madeHere.id))?.imported, false);
+    ok('db: so it never gets the notice either', !(await legacy(madeHere.id)));
+  }
 
   // ── 12.14 the RESTRICT behind the taxonomy delete refusals ───────────────
   // `countPostsForAuthor` counts posts AND revisions because BOTH tables carry

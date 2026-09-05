@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import {
   editorCanvas,
   editorShell,
+  editorSkeletonLine,
+  editorSkeletonToolbar,
   editorToolbar,
 } from '@/components/Admin/blogs/editor/editorBox';
 import { cn } from '@/lib/utils';
@@ -34,18 +36,15 @@ export default BodyEditor;
 
 /**
  * Roughly the prose column, at the toolbar's real height, so the canvas does
- * not jump when the editor arrives. The boxes are IMPORTED from
- * `editorBox.ts` rather than copied, for the reason `Admin/blogs/listBox.ts`
- * gives: five hand-copied class strings are how a skeleton drifts.
- *
- * The bar sits inside a text-sized `span`, the `SkeletonText` shape: a bare
- * `h-2.5` div measures itself and comes out short of the line box the sentence
- * would have had.
+ * not jump when the editor arrives. Every box is IMPORTED from `editorBox.ts`
+ * rather than copied, for the reason `Admin/blogs/listBox.ts` gives: five
+ * hand-copied class strings are how a skeleton drifts. `BlogEditorSkeleton`
+ * draws the same two while the page itself loads, off the same tokens.
  */
 const Line = ({ className }: { className: string }) => (
   <span className="text-md">
     <span
-      className={cn('inline-block h-2.5 rounded bg-black/[0.07] align-middle', className)}
+      className={cn(editorSkeletonLine, className)}
     />
   </span>
 );
@@ -54,7 +53,7 @@ function BodyEditorSkeleton() {
   return (
     <div className={editorShell} aria-hidden>
       <div className={editorToolbar}>
-        <div className="h-8 w-full rounded-lg bg-black/[0.05]" />
+        <div className={editorSkeletonToolbar} />
       </div>
       <div className={editorCanvas}>
         <div className="flex flex-col gap-4">
