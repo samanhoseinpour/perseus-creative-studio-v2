@@ -51,6 +51,14 @@ import {
   inspectorPanel,
   inspectorTab,
   inspectorTabStrip,
+  revisionChip,
+  revisionChipCell,
+  revisionGrid,
+  revisionHeadRow,
+  revisionRowActions,
+  revisionRowPad,
+  revisionRowShell,
+  revisionTitleCell,
 } from '@/components/Admin/blogs/postBox';
 import {
   editorCanvas,
@@ -1055,6 +1063,92 @@ export function BlogEditorSkeleton() {
           </div>
         </aside>
       </div>
+    </Shell>
+  );
+}
+
+/**
+ * A post's saved versions: header + head row + rows + the standing note.
+ *
+ * `wide`, the token its page passes. The rows quote `revisionGrid` and
+ * `revisionRowPad` by import for this file's whole reason: a head row and a
+ * body row whose widths are written twice line up until the next edit.
+ *
+ * How many rows to draw is a guess either way, so it draws SIX: a post that has
+ * been through a publish and a handful of saves has about that many, and a
+ * skeleton shorter than the list leaves the note below it jumping up the page
+ * on swap.
+ */
+export function BlogRevisionsSkeleton() {
+  return (
+    <Shell label="Loading saved versions">
+      <SkeletonHeader
+        eyebrow="Website"
+        title="Saved versions"
+        // The post's own title, which is data, so it is a bar.
+        subtitle={<SkeletonText className="h-2.5 w-56" />}
+        action={<SkeletonPill className="h-8 w-36" />}
+      />
+
+      <GlassPanel className="mt-6">
+        <div className={revisionHeadRow}>
+          <div className={revisionGrid}>
+            {['w-12', 'w-24', 'w-10', 'w-16', 'w-10', 'w-10', ''].map((w, i) => (
+              <span key={i} className={blogHeadCell}>
+                {w ? <SkeletonText className={cn('h-2', w)} /> : null}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <ul>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li
+              key={i}
+              className={cn(revisionRowShell, blogPanelDivider, 'last:border-b-0')}
+            >
+              {/* Cell for cell against RevisionsTable, INCLUDING the three
+                  `lg:` visibilities. Below `lg` the real row is a number, a
+                  chip line, a title, a meta line and the two controls stacked;
+                  a skeleton that drew the desktop shape at every width is short
+                  by two rows on a phone, six rows deep. */}
+              <div className={cn(revisionRowPad, revisionGrid, 'min-w-0 flex-1')}>
+                <SkeletonText className="h-2.5 w-6" />
+                <span className={revisionChipCell}>
+                  <span className={cn(revisionChip, 'border-transparent')}>
+                    <SkeletonText className="h-2 w-14" />
+                  </span>
+                </span>
+                <span className={revisionTitleCell}>
+                  <span className="block text-sm">
+                    <SkeletonText className="h-2.5 w-3/4" />
+                  </span>
+                  <span className="mt-0.5 block text-xs lg:hidden">
+                    <SkeletonText className="h-2 w-2/3" />
+                  </span>
+                </span>
+                <span className="hidden text-xs lg:block">
+                  <SkeletonText className="h-2.5 w-20" />
+                </span>
+                <span className="hidden text-xs lg:block">
+                  <SkeletonText className="h-2.5 w-8" />
+                </span>
+                <span className="hidden text-xs lg:block">
+                  <SkeletonText className="h-2.5 w-10" />
+                </span>
+                {/* Preview always; Restore only off the trash, which is not
+                    knowable here, so both are reserved. */}
+                <span className={revisionRowActions}>
+                  <SkeletonPill className="h-8 w-20" />
+                  <SkeletonPill className="h-8 w-20" />
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </GlassPanel>
+
+      <SkeletonNote lines={2} />
     </Shell>
   );
 }

@@ -15,7 +15,7 @@ import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { GlassRim } from '@/components/Admin/Glass';
 import { dropdownMenuContent, menuItem } from '@/components/Admin/menu';
 import { blogRowActions } from '@/lib/blogListFields';
-import type { BlogPostStatus } from '@/lib/blogFields';
+import { blogPreviewHref, type BlogPostStatus } from '@/lib/blogFields';
 import { cn } from '@/lib/utils';
 
 /**
@@ -81,7 +81,7 @@ export default function BlogRowMenu({
           {actions.preview && (
             <DropdownMenu.Item asChild>
               <a
-                href={`/admin/blogs/${postId}/preview`}
+                href={blogPreviewHref(postId)}
                 target="_blank"
                 rel="noreferrer"
                 className={cn(menuItem, 'text-foreground')}

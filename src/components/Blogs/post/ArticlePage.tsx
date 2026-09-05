@@ -30,11 +30,33 @@ import TableOfContents from './TableOfContents';
 
 /**
  * ONE component renders the whole post page from a PublishedPost view model:
- * the marketing route renders it, and step 2's preview route renders it from
- * an uncached draft view. It imports every dependency by direct path, never
- * the @/components barrel (the components↔index cycle CLAUDE.md documents).
+ * the marketing route renders it, and the preview route at
+ * /admin/blogs/[id]/preview renders it from an uncached draft view. It imports
+ * every dependency by direct path, never the @/components barrel (the
+ * components↔index cycle CLAUDE.md documents).
+ *
+ * `preview` DROPS the two controls that would lie on an unpublished post, and
+ * dropping them is the point rather than disabling them:
+ *
+ *  - `ArticleFeedback` writes a vote keyed on the slug, and the action checks
+ *    that slug against `publishedSlugExists`, so a vote cast here is accepted
+ *    by the button and silently discarded by the server. A control that
+ *    reports success and does nothing is worse than no control.
+ *  - `ShareBlogs` builds every intent URL from the post's future public
+ *    address, which 404s until the post is published. A share sheet whose
+ *    links are dead is the same lie in a different shape.
+ *
+ * Everything else renders exactly as the public route renders it, which is the
+ * whole promise of the preview: what a writer sees is what a reader gets,
+ * because it is the same component and not a second rendering of it.
  */
-export default async function ArticlePage({ view }: { view: PublishedPost }) {
+export default async function ArticlePage({
+  view,
+  preview = false,
+}: {
+  view: PublishedPost;
+  preview?: boolean;
+}) {
   const { author } = view;
   const crumbs: Crumb[] = [
     { label: 'Perseus', href: '/' },
@@ -54,16 +76,44 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
   const howToBlocks = howTos(view.body);
   const readingMin = readingMinutes(view.wordCount);
 
-  const [{ prev: prevPost, next: nextPost }, stats, archiveEntries, related] = await Promise.all([
-    neighbours(view.slug),
-    categoryStats(),
-    getCategoryProjects(view.category.slug, 4),
-    selectBlogCards(
-      view.relatedSlugs.length
-        ? { forcedSlugs: view.relatedSlugs, excludeSlug: view.slug, limit: 4 }
-        : { categorySlug: view.category.slug, excludeSlug: view.slug, limit: 4 },
-    ),
-  ]);
+  const [{ prev: prevPost, next: nextPost }, stats, archiveEntries, curatedCards] =
+    await Promise.all([
+      neighbours(view.slug),
+      categoryStats(),
+      getCategoryProjects(view.category.slug, 4),
+      selectBlogCards(
+        view.relatedSlugs.length
+          ? { forcedSlugs: view.relatedSlugs, excludeSlug: view.slug, limit: 4 }
+          : { categorySlug: view.category.slug, excludeSlug: view.slug, limit: 4 },
+      ),
+    ]);
+
+  // A CURATION THAT RESOLVED TO NOTHING FALLS BACK TO THE CATEGORY, and the
+  // fallback is here rather than inside `selectBlogCards` because the call
+  // above passes `forcedSlugs` or `categorySlug` and never both, so the reader
+  // that would have to choose between them is this one.
+  //
+  // It is reachable two ways and only the first can be repaired at the data
+  // layer. UNPUBLISHING a curated target leaves the `blog_post_related` row
+  // intact while dropping the post from `listPublishedSummaries`. HARD-DELETING
+  // one cascades that row away, but the referring post's public page reads its
+  // related slugs from the FROZEN published snapshot, so the dead slug sits in
+  // `forcedSlugs` until somebody republishes the referrer. Nothing the
+  // deleting writer does can clear it.
+  //
+  // The alternative was to render nothing, and that is worse on a public page:
+  // it throws away four internal links precisely when the category has two
+  // dozen posts to offer, and punishes this post for a curation that rotted
+  // somewhere else. `listPublishedSummaries` is behind `unstable_cache`, so
+  // this second read is a Data Cache hit rather than a Neon round trip.
+  const related =
+    view.relatedSlugs.length > 0 && curatedCards.length === 0
+      ? await selectBlogCards({
+          categorySlug: view.category.slug,
+          excludeSlug: view.slug,
+          limit: 4,
+        })
+      : curatedCards;
   const otherCategories = stats
     .filter((c) => c.slug !== view.category.slug)
     .map((c) => ({
@@ -79,6 +129,17 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
   const formatLatest = (iso: string | null) =>
     iso ? new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : null;
   const jsonLd = buildPostJsonLd({ view, crumbs, toc, videos: embeddedVideos, figures: showcaseFigures, howTos: howToBlocks });
+
+  // Whether the section may call itself a curation, read from what the CURATED
+  // read resolved rather than from what was asked for. `selectBlogCards` drops
+  // any forced slug that is not a published post, and its `curated ?? …`
+  // fallback only fires when `forcedSlugs` was empty to begin with, so a
+  // curated list whose every entry has since been purged or unpublished comes
+  // back as `[]`. The heading, the accent and the description all read this one
+  // flag, because three separate ternaries over `relatedSlugs.length` is how
+  // the page ended up promising "a curated set of articles chosen to extend the
+  // ideas in this piece" over cards the category supplied instead.
+  const curatedRelated = view.relatedSlugs.length > 0 && curatedCards.length > 0;
 
   return (
     <main className="pb-16 lg:pb-24">
@@ -171,11 +232,13 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
               >
                 Category: {view.category.title}
               </Link>
-              <ShareBlogs
-                title={view.title}
-                slug={view.slug}
-                canonicalPath={view.seo.selfUrl}
-              />
+              {!preview && (
+                <ShareBlogs
+                  title={view.title}
+                  slug={view.slug}
+                  canonicalPath={view.seo.selfUrl}
+                />
+              )}
             </div>
           </Container>
         </header>
@@ -204,7 +267,7 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
                 ) : null}
 
                 {/* Write-only reader vote; tallies surface in /admin/feedback. */}
-                <ArticleFeedback slug={view.slug} />
+                {!preview && <ArticleFeedback slug={view.slug} />}
 
                 <aside
                   aria-labelledby="author-profile-heading"
@@ -334,38 +397,48 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
         }
       />
 
-      <section
-        aria-label={`Related articles about ${view.category.title}`}
-        className="mt-16"
-      >
-        <Heading
-          titleTag="h2"
-          seperatorTitle="Related Articles"
-          eyebrowRight="More Reads"
-          title={
-            view.relatedSlugs.length
-              ? 'Hand-picked related reads'
-              : `More on ${view.category.title}`
-          }
-          titleAccent={
-            view.relatedSlugs.length
-              ? 'Editor’s picks from across the journal.'
-              : 'Continue reading from the same category.'
-          }
-          description={
-            view.relatedSlugs.length
-              ? 'A curated set of articles chosen to extend the ideas in this piece.'
-              : `Explore more articles about ${view.category.title} from the Perseus Creative Studio journal.`
-          }
-          containerStyle="mb-10"
-          titleStyle="max-w-4xl"
-          descStyle="max-w-3xl"
-        />
+      {/* THE WHOLE SECTION GOES when there is nothing to put in it, and this
+          guard is the backstop rather than the fix. The fallback above means an
+          empty list now needs BOTH the curated read and the category read to
+          come back with nothing, which today takes a category holding only this
+          post. The editor this programme is building makes that a single form
+          away, so without the guard the contradiction returns through the
+          category path: `BlogPost` renders "No related posts found for this
+          blog." under a heading that has just offered more of them. */}
+      {related.length > 0 && (
+        <section
+          aria-label={`Related articles about ${view.category.title}`}
+          className="mt-16"
+        >
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Related Articles"
+            eyebrowRight="More Reads"
+            title={
+              curatedRelated
+                ? 'Hand-picked related reads'
+                : `More on ${view.category.title}`
+            }
+            titleAccent={
+              curatedRelated
+                ? 'Editor’s picks from across the journal.'
+                : 'Continue reading from the same category.'
+            }
+            description={
+              curatedRelated
+                ? 'A curated set of articles chosen to extend the ideas in this piece.'
+                : `Explore more articles about ${view.category.title} from the Perseus Creative Studio journal.`
+            }
+            containerStyle="mb-10"
+            titleStyle="max-w-4xl"
+            descStyle="max-w-3xl"
+          />
 
-        {/* Curation happens server-side (selectBlogCards) so the client grid
-            receives four slim cards instead of importing the whole registry. */}
-        <BlogPost posts={related} showFilters={false} enableFiltering={false} />
-      </section>
+          {/* Curation happens server-side (selectBlogCards) so the client grid
+              receives four slim cards instead of importing the whole registry. */}
+          <BlogPost posts={related} showFilters={false} enableFiltering={false} />
+        </section>
+      )}
 
       {/* Real work from the same discipline — the projects behind the writing.
           <ProjectShowcase> self-guards (renders nothing) if the post's category

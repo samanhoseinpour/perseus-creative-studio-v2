@@ -295,6 +295,19 @@ console.log('/admin is never written to Cache Storage');
       destination: 'empty',
       headers: { rsc: '1' },
     },
+    // The blog draft preview is the one /admin route that renders a whole
+    // MARKETING page: the real Navbar, the article, the real Footer. It is the
+    // exact shape a caching rule would reach for, and it must not be cached,
+    // because an unpublished draft in Cache Storage outlives the session that
+    // was allowed to read it.
+    {
+      label: 'blog draft preview',
+      url: '/admin/blogs/6f1d2b1e-0b8f-4a2c-9d3e-5a7c8b9d0e1f/preview',
+    },
+    {
+      label: 'blog draft preview pinned to a version',
+      url: '/admin/blogs/6f1d2b1e-0b8f-4a2c-9d3e-5a7c8b9d0e1f/preview?revision=8c2e3f4a-1d5b-4c6e-8f7a-9b0c1d2e3f40',
+    },
   ];
   for (const c of cases) await dispatch(h, c);
   assert(

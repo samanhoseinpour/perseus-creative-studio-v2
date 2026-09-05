@@ -1,5 +1,9 @@
 import type { BlogEditorValues } from '@/lib/blogEditorFields';
-import type { BlogPostStatus } from '@/lib/blogFields';
+import type {
+  BlogPostStatus,
+  BlogRevisionMarker,
+  BlogRevisionReason,
+} from '@/lib/blogFields';
 
 /**
  * The serializable shapes the editor page hands to the client, kept apart from
@@ -68,4 +72,38 @@ export type BlogEditorPost = {
    *  and for every post created in it. */
   wordCountIsLegacy: boolean;
   values: BlogEditorValues;
+};
+
+/**
+ * One saved version, as the history screen renders it.
+ *
+ * Every date is already a finished STRING resolved in the viewer's own zone on
+ * the server, the `BlogEditorPost` contract: the browser never turns a stored
+ * instant into a `Date`, which is what keeps the server render and the
+ * hydration agreeing.
+ *
+ * `marker` is `revisionMarker(row)` resolved on the server, so the screen
+ * renders a decision rather than taking one. The snapshot is deliberately
+ * absent: `listRevisions` does not select it, and a history list has no use
+ * for a whole document per row.
+ */
+export type BlogRevisionItem = {
+  id: string;
+  /** Its number within this post. NOT its position in the list: numbers can
+   *  have gaps, so nothing here may infer one from the other. */
+  number: number;
+  reason: BlogRevisionReason;
+  /** The title the post carried in that version, which is what makes a
+   *  headline rewrite findable. */
+  title: string;
+  wordCount: number;
+  /** Who saved it. Null for an imported version, which had no actor, and for
+   *  one whose account has since been deleted (`ON DELETE SET NULL`). */
+  actorName: string | null;
+  /** "Aug 3, 2026, 9:00 AM" in the viewer's zone. */
+  savedLabel: string;
+  /** "3d", for the same instant. */
+  savedRelative: string;
+  /** Which of the post's two pointers names it, if either. */
+  marker: BlogRevisionMarker | null;
 };

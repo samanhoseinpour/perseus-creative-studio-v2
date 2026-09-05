@@ -1,9 +1,15 @@
 import { adminTopBarTop, glassCard, glassChrome } from '@/components/Admin/Glass';
+// The list's hairline, imported rather than restated. These two token files
+// exist precisely so a class string has one definition, and a second copy of
+// `border-b border-white/40 dark:border-white/10` here would be the first
+// thing to drift the day somebody changes the panel's rule.
+import { panelDivider } from '@/components/Admin/blogs/listBox';
 import { cn } from '@/lib/utils';
 
 /**
- * Every box the post editor draws, as class strings, so the screen and
- * `BlogEditorSkeleton` import one definition instead of hand-copying it.
+ * Every box the post editor and its version history draw, as class strings, so
+ * each screen and its skeleton import one definition instead of hand-copying
+ * it.
  *
  * `Admin/blogs/listBox.ts` states the reasoning at length: a skeleton is only
  * worth having if each row is the height of the row it stands in for, and the
@@ -95,3 +101,45 @@ export const inspectorCard =
  *  read as one more field rather than as a preview of somewhere else. */
 export const snippetShell =
   'flex flex-col gap-1 rounded-xl border border-foreground/12 bg-background/60 p-3';
+
+// ── The version history ─────────────────────────────────────────────────────
+
+/**
+ * The seven columns, shared by the head row and every version row, for
+ * `postGrid`'s reason: a head row whose widths are written separately from the
+ * rows beneath it lines up until the next edit.
+ *
+ * Below `lg` the grid collapses and each row stacks, so every column that is
+ * not the title carries its own `lg:` visibility and rides a meta line on a
+ * phone instead.
+ */
+export const revisionGrid =
+  'lg:grid lg:grid-cols-[3.5rem_10rem_minmax(0,1fr)_8rem_4.5rem_8rem_8.5rem] lg:items-center lg:gap-x-4';
+
+/** The head row above the list. No ⋯ gutter to reserve: the two controls sit
+ *  in the last column, which the head row labels like any other. */
+export const revisionHeadRow = cn(panelDivider, 'hidden py-2 px-3 sm:px-4 lg:block');
+
+/** One version row. */
+export const revisionRowShell = 'flex items-center';
+
+/** The reason and marker chips share one shape, and the skeleton draws its bar
+ *  inside this same box, so the pill it reserves is the height of the pill it
+ *  stands in for. Colour is added at the call site: the shape is shared, the
+ *  meaning is not. */
+export const revisionChip =
+  'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.65rem] font-medium';
+
+/** The cell that holds them. On a phone it sits under the number and above the
+ *  title, which is why it carries its own top margin below `lg`. */
+export const revisionChipCell = 'mt-1 flex flex-wrap items-center gap-1.5 lg:mt-0';
+
+/** The title cell. A wrapper rather than the title itself, because below `lg`
+ *  it also carries the meta line the three columns after it fold into. */
+export const revisionTitleCell = 'mt-1 block min-w-0 lg:mt-0';
+
+/** A row's cell block. */
+export const revisionRowPad = 'px-3 py-3 sm:px-4';
+
+/** The trailing controls: preview, then restore. */
+export const revisionRowActions = 'mt-2 flex shrink-0 items-center gap-2 lg:mt-0 lg:justify-end';

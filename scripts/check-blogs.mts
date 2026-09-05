@@ -80,6 +80,7 @@ import {
   blogPostRevisions,
   blogPostStatus,
   blogPosts,
+  blogRevisionReason,
   type BlogRevisionSnapshot,
 } from '@/db/schema';
 import {
@@ -110,10 +111,19 @@ import type { BlogHero, PublishedPost } from '@/lib/blogStore';
 import {
   BLOG_POST_STATUSES,
   BLOG_POST_STATUS_LABELS,
+  BLOG_PREVIEW_REVISION_PARAM,
+  BLOG_REVISION_MARKER_LABELS,
+  BLOG_REVISION_REASONS,
+  BLOG_REVISION_REASON_LABELS,
   ROBOTS_EXTRA_KEYS,
   ROBOTS_EXTRA_KINDS,
   ROBOTS_PREVIEW_VALUES,
+  BLOG_REVISION_LIST_CAP,
+  blogPreviewHref,
+  blogRevisionsHref,
   buildSnapshot,
+  canRestoreRevision,
+  foldRevisionList,
   contentChanged,
   contentFingerprint,
   authorPublicFingerprint,
@@ -126,6 +136,7 @@ import {
   publicFingerprint,
   publicUrlFor,
   restoreTarget,
+  revisionMarker,
   slugLocked,
   transitionProblem,
   type BlogPostStatus,
@@ -1876,6 +1887,23 @@ const stripComments = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 
 const occurrences = (hay: string, needle: string) => hay.split(needle).length - 1;
+
+/**
+ * How many times a WHOLE word appears, which is the only honest way to count a
+ * name or a label in source or copy.
+ *
+ * It exists because this file has now written the same bug twice, in the same
+ * round, twenty lines apart: `includes('revisionChip')` was satisfied by
+ * `revisionChipCell`, and `includes('published')` by `unpublished`. Both left a
+ * real mutation green. Any assertion asking "is this name used" or "does this
+ * sentence say this word" goes through here rather than through `includes`,
+ * which answers a question nobody meant to ask.
+ *
+ * The needle is escaped, so a label carrying a `.` or a `(` cannot silently
+ * become a wildcard.
+ */
+const wordHits = (hay: string, word: string): number =>
+  [...hay.matchAll(new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g'))].length;
 
 /** Lines mentioning a token. Counted by LINE rather than by occurrence,
  *  because `customSchema: row.customSchema` is one decision written twice. */
@@ -6678,6 +6706,639 @@ eq('and it is trimmed', snippetClamp('  padded  ', 60), 'padded');
     [],
   );
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 15. The two read surfaces: the draft preview and the version history
+// ═══════════════════════════════════════════════════════════════════════════
+// Neither of these screens writes anything, which is exactly why their
+// mistakes are quiet. Five of them, and not one shows on screen:
+//
+//  - The `?revision=` key. `getDraftPost` reads a missing key as "show the
+//    working row", so a link that spells it `?rev=` does not 404 and does not
+//    warn: it renders the current draft under a URL claiming to name a saved
+//    version, and the writer proofreads the wrong text.
+//  - A reason the pgEnum carries and the leaf does not. The leaf cannot
+//    value-import the schema, so the two can drift, and what a member meets is
+//    a chip reading `undefined`.
+//  - `canRestoreRevision` disagreeing with the door behind it, in either
+//    direction: a button whose only outcome is a refusal, or a move nobody is
+//    offered.
+//  - The preview page's PLACEMENT. Outside `(protected)` is what lets it wear
+//    the marketing chrome, and it is also what takes `requireArea` off the
+//    layout and puts it on the page. Delete that one call and every signed-in
+//    account can read every unpublished draft, with nothing failing.
+//  - A `layout.tsx` or a `loading.tsx` under `(admin)/admin/blogs/`. The first
+//    would apply to this one branch and silently diverge from the protected
+//    pages beside it; the second commits a 200 shell before the page runs,
+//    which turns an unknown id into a soft 404 instead of a real one.
+
+const PREVIEW_PAGE_PATH = '../src/app/(admin)/admin/blogs/[id]/preview/page.tsx';
+const PREVIEW_SRC = readRepoFile(PREVIEW_PAGE_PATH);
+const REVISIONS_PAGE_SRC = readRepoFile(
+  '../src/app/(admin)/admin/(protected)/blogs/[id]/revisions/page.tsx',
+);
+const REVISIONS_TABLE_SRC = readRepoFile('../src/components/Admin/blogs/RevisionsTable.tsx');
+const ARTICLE_PAGE_SRC = readRepoFile('../src/components/Blogs/post/ArticlePage.tsx');
+
+// Fail loudly rather than passing vacuously: an empty read would make every
+// "contains" assertion below trivially false and every "does not contain" one
+// trivially true.
+ok('read the preview route (drift guard)', PREVIEW_SRC.length > 1000);
+ok('read the revisions route (drift guard)', REVISIONS_PAGE_SRC.length > 1000);
+ok('read RevisionsTable.tsx (drift guard)', REVISIONS_TABLE_SRC.length > 1000);
+ok('read ArticlePage.tsx (drift guard)', ARTICLE_PAGE_SRC.length > 5000);
+
+const PREVIEW_CODE = stripComments(PREVIEW_SRC);
+const REVISIONS_PAGE_CODE = stripComments(REVISIONS_PAGE_SRC);
+const REVISIONS_TABLE_CODE = stripComments(REVISIONS_TABLE_SRC);
+const ARTICLE_PAGE_CODE = stripComments(ARTICLE_PAGE_SRC);
+
+// ---- 15.1 the revision vocabulary matches the database --------------------
+// Section 1's assertion, for the other enum. The leaf cannot value-import
+// src/db/schema.ts, so nothing in the app would notice the two drifting: a
+// reason the enum has and the leaf does not is a row whose chip renders
+// `undefined`, and one the leaf has and the enum does not is a chip no row can
+// ever carry.
+
+eq(
+  'BLOG_REVISION_REASONS equals the blog_revision_reason pgEnum, same order',
+  [...BLOG_REVISION_REASONS],
+  [...blogRevisionReason.enumValues],
+);
+
+eq(
+  'every reason has a label, and none of them is the raw slug',
+  BLOG_REVISION_REASONS.filter((reason) => {
+    const label = BLOG_REVISION_REASON_LABELS[reason];
+    return typeof label !== 'string' || label.trim() === '' || label === reason;
+  }),
+  [],
+);
+
+// Two reasons reading the same word is a chip that answers nothing: the whole
+// point of the column is telling a publish apart from a save.
+eq(
+  'no two reasons share a label',
+  new Set(Object.values(BLOG_REVISION_REASON_LABELS)).size,
+  BLOG_REVISION_REASONS.length,
+);
+
+// ---- 15.2 at most one marker per row --------------------------------------
+// The post's two pointers are separate columns, so the TYPE admits a row both
+// of them name. No door produces one today, but a total function has to answer
+// for it, and two contradictory chips on one line is not an answer.
+
+eq('a row nothing points at gets no marker', revisionMarker({ isPublished: false, isPending: false }), null);
+eq('the live one is marked published', revisionMarker({ isPublished: true, isPending: false }), 'published');
+eq('the queued one is marked pending', revisionMarker({ isPublished: false, isPending: true }), 'pending');
+eq(
+  'and published wins when both pointers name it',
+  revisionMarker({ isPublished: true, isPending: true }),
+  'published',
+);
+
+eq(
+  'both markers have a label, and the two are different words',
+  [
+    BLOG_REVISION_MARKER_LABELS.published.trim() !== '',
+    BLOG_REVISION_MARKER_LABELS.pending.trim() !== '',
+    BLOG_REVISION_MARKER_LABELS.published !== BLOG_REVISION_MARKER_LABELS.pending,
+  ],
+  [true, true, true],
+);
+
+// ---- 15.2b the cap, and what it owes ---------------------------------------
+// Nothing ever deletes a revision, so this is the one list in the feature that
+// grows monotonically. A cap that does not state its remainder can pass for the
+// whole history, which is the `foldLineCap` / `foldCellChips` rule: on a page
+// whose entire job is "what has this post been", a silent truncation is a
+// wrong answer rather than a short one.
+{
+  const rows = Array.from({ length: 7 }, (_, i) => i);
+  eq('under the cap, everything shows and nothing is hidden', foldRevisionList(rows, 10), {
+    shown: rows,
+    hidden: 0,
+  });
+  eq('exactly at the cap, still nothing hidden', foldRevisionList(rows, 7), { shown: rows, hidden: 0 });
+  eq('over it, the NEWEST survive and the remainder is stated', foldRevisionList(rows, 3), {
+    shown: [0, 1, 2],
+    hidden: 4,
+  });
+  // The reconciliation itself, swept, because it is the only property the
+  // remainder line is worth anything for.
+  eq(
+    'shown + hidden always equals the whole list',
+    Array.from({ length: 12 }, (_, cap) => {
+      const { shown, hidden } = foldRevisionList(rows, cap);
+      return shown.length + hidden === rows.length;
+    }).filter((held) => !held).length,
+    0,
+  );
+  eq('a zero cap hides everything rather than throwing', foldRevisionList(rows, 0), {
+    shown: [],
+    hidden: 7,
+  });
+  eq('an empty history folds to nothing at all', foldRevisionList([], 5), { shown: [], hidden: 0 });
+  ok('and the real cap is a number a post can actually reach', BLOG_REVISION_LIST_CAP > 0);
+}
+
+// ---- 15.3 canRestoreRevision mirrors the door -----------------------------
+// Swept over the whole status vocabulary rather than written as two literals,
+// so a sixth status is forced through the decision instead of inheriting one.
+
+for (const status of BLOG_POST_STATUSES) {
+  eq(
+    `canRestoreRevision(${status}) matches the door's own refusal`,
+    canRestoreRevision(status),
+    status !== 'trash',
+  );
+}
+
+// And the other half of "mirrors": the door itself is read, so widening its
+// refusal without widening the leaf fails HERE rather than shipping a button
+// whose only outcome is a sentence saying it should not have been offered.
+// (The `check-menu-trigger.mts` arrangement, which reads Radix's own source.)
+{
+  const restoreDoor = region(
+    ACTIONS_SRC,
+    'export async function restoreRevision(',
+    "// ── The editor's internal-link picker",
+    'the restoreRevision door',
+  );
+  eq(
+    'restoreRevision refuses exactly one status, and it is trash',
+    linesWith(stripComments(restoreDoor), 'row.status ===').map((line) => line.trim()),
+    ["if (row.status === 'trash') {"],
+  );
+}
+
+// ---- 15.4 the preview URL, which is the silent one ------------------------
+
+eq('the query key is `revision`', BLOG_PREVIEW_REVISION_PARAM, 'revision');
+eq('the bare preview path', blogPreviewHref('p1'), '/admin/blogs/p1/preview');
+eq(
+  'and pinned to a version',
+  blogPreviewHref('p1', 'r1'),
+  '/admin/blogs/p1/preview?revision=r1',
+);
+// An EMPTY id must not produce a dangling `?revision=`. getDraftPost reads that
+// as "no revision given" and shows the working row, so the URL would claim to
+// name a version it is not showing.
+for (const [label, value] of [
+  ['an empty revision id', ''],
+  ['a null one', null],
+  ['an absent one', undefined],
+] as const) {
+  eq(`${label} yields the bare path`, blogPreviewHref('p1', value), '/admin/blogs/p1/preview');
+}
+eq('the version history path', blogRevisionsHref('p1'), '/admin/blogs/p1/revisions');
+
+// The page reads the key through the constant, so a link and the page that
+// answers it cannot spell it differently.
+ok(
+  'the preview page reads the key through the constant',
+  PREVIEW_CODE.includes('sp[BLOG_PREVIEW_REVISION_PARAM]'),
+);
+eq(
+  "and never reaches for a 'revision' literal of its own",
+  literals(PREVIEW_CODE).filter((s) => s === "'revision'"),
+  [],
+);
+
+// Nothing in the tree builds either path by hand any more. A hand-built one is
+// not an error anywhere: it renders, and the mistake only shows as the wrong
+// article under the right URL.
+//
+// TWO SPELLINGS, because the first version of this only caught the template
+// literal and `'/admin/blogs/' + post.id + '/preview'` walked straight past it,
+// leaving the assertion claiming more than it held. The first arm is the
+// interpolated form (`${...}` carries no quote, so the character class holds);
+// the second is a quoted suffix, which is what concatenation and `.concat` and
+// a `join('/')` all end up emitting.
+const HAND_SPELLED_PATH =
+  /\/admin\/blogs\/[^'"`\n]*\/(?:preview|revisions)|(['"`])\/(?:preview|revisions)\1/;
+eq(
+  'no file spells the preview or revisions path by hand',
+  readdirSync(new URL('../src/', import.meta.url), { recursive: true })
+    .map((entry) => String(entry))
+    .filter((entry) => /\.tsx?$/.test(entry))
+    // The leaf is where they ARE spelled, so it is the one exemption.
+    .filter((entry) => entry !== 'lib/blogFields.ts')
+    .filter((entry) =>
+      HAND_SPELLED_PATH.test(
+        stripComments(readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8')),
+      ),
+    )
+    .sort(),
+  [],
+);
+// The regex is the thing under test here, so it is exercised on both shapes
+// rather than trusted. A sweep that matches nothing looks exactly like a tree
+// with nothing to find.
+eq(
+  'and that sweep catches both spellings (fixture guard)',
+  [
+    'href={`/admin/blogs/${post.id}/preview`}',
+    "href={'/admin/blogs/' + post.id + '/preview'}",
+    'href={`/admin/blogs/${id}/revisions`}',
+    "const p = '/revisions';",
+    'href={blogPreviewHref(post.id)}',
+    'href={`/admin/blogs/${post.id}`}',
+  ].map((sample) => HAND_SPELLED_PATH.test(sample)),
+  [true, true, true, true, false, false],
+);
+
+// ---- 15.5 where the preview route sits ------------------------------------
+// The placement IS the feature, and every part of it is invisible when wrong.
+
+{
+  const adminBlogsDir = new URL('../src/app/(admin)/admin/blogs/', import.meta.url);
+  const files = readdirSync(adminBlogsDir, { recursive: true })
+    .map((entry) => String(entry))
+    .filter((entry) => /\.tsx?$/.test(entry))
+    .sort();
+  // A directory read that came back short would make the two refusals below
+  // trivially true, which is the shape of a check that proves nothing.
+  eq('the preview route is the only file in (admin)/admin/blogs', files, [
+    '[id]/preview/page.tsx',
+  ]);
+  eq(
+    'so there is no layout.tsx and no loading.tsx under it',
+    files.filter((entry) => /(^|\/)(layout|loading)\.tsx$/.test(entry)),
+    [],
+  );
+}
+
+// The authorization boundary. src/proxy.ts only checks that a session cookie
+// EXISTS, and the preview page is outside `(protected)`, so its one call is
+// the only thing between a member with no blogs grant and every unpublished
+// draft.
+//
+// THE `await` IS PART OF THE ASSERTION, and asserting the call alone was a
+// real hole rather than a style point. `requireArea` refuses by THROWING
+// `redirect()`, so an un-awaited call throws inside a detached promise: React
+// never attributes it to the component, the render completes, and the draft is
+// served to somebody the gate refused. Nothing else in the repo would notice —
+// `next build` type-checks a floating promise happily, and eslint.config.mjs
+// enables no type-aware rules, so `no-floating-promises` is not in play. The
+// mutation that found this dropped one word and left the check ALL PASS.
+//
+// Matched as the WHOLE call rather than a substring, so this also pins that
+// there is exactly one gate per file, on the right area, with the right
+// fallback. The revisions page is here too: it sits inside `(protected)`, so
+// its layout is a second boundary, but a page that re-gates is the house rule
+// and a page that stops is a change nobody would see.
+//
+// A QUOTED look-alike is dropped before the match, and that is not fussiness:
+// a source-text assertion reads text rather than behaviour, so without this a
+// decoy string spelling the call would satisfy it after the real call had been
+// deleted, which is the one arrangement that turns this pin into a comment.
+// With the strip, both arrangements answer correctly: a decoy BESIDE a real
+// gate passes (the gate is there and works, and a stray string is not a
+// defect), and a decoy INSTEAD OF one fails. Only literals containing
+// `requireArea` are removed, because the real call's own `'blogs'` and
+// `'/admin'` are string literals too.
+//
+// WHAT IT STILL CANNOT SEE is whether the call RUNS: a gate inside a branch
+// that never executes reads identically here. Nothing in this file can answer
+// that, and nothing tries to. The HTTP suite is what covers it, by asking the
+// running page for a draft as an account holding no blogs grant.
+// One arm per delimiter, because a class excluding ALL THREE quote characters
+// cannot span the real call's own `'blogs'` inside a double-quoted decoy, which
+// is exactly the shape a mutation used.
+const QUOTED_GATE =
+  /'[^'\n]*requireArea[^'\n]*'|"[^"\n]*requireArea[^"\n]*"|`[^`]{0,200}requireArea[^`]{0,200}`/g;
+const withoutQuotedGates = (code: string) => code.replace(QUOTED_GATE, '""');
+for (const [label, code] of [
+  ['the preview route', PREVIEW_CODE],
+  ['the revisions route', REVISIONS_PAGE_CODE],
+] as const) {
+  eq(
+    `${label} gates itself on the blogs area, and AWAITS the gate`,
+    [...withoutQuotedGates(code).matchAll(/(?:await\s+)?requireArea\([^)]*\)/g)].map((m) =>
+      m[0].replace(/\s+/g, ' '),
+    ),
+    ["await requireArea('blogs', '/admin')"],
+  );
+}
+ok(
+  'and renders at request time',
+  PREVIEW_CODE.includes("export const dynamic = 'force-dynamic'"),
+);
+ok(
+  "and sets its own title, since it inherits the admin layout's template",
+  /title:\s*'Preview'/.test(PREVIEW_CODE),
+);
+ok('and 404s an unknown post or a foreign revision', PREVIEW_CODE.includes('notFound()'));
+
+// The chrome is the REAL chrome. A second rendering of the Navbar and Footer
+// would be the first thing to drift from the page it is previewing, which is
+// the one promise this route makes.
+for (const needle of [
+  "from '@/components/Navbar'",
+  "from '@/components/Footer'",
+  "from '@/components/Blogs/post/ArticlePage'",
+]) {
+  ok(`the preview page imports ${needle}`, PREVIEW_SRC.includes(needle));
+}
+eq(
+  'and never through the @/components barrel',
+  linesWith(PREVIEW_CODE, "from '@/components'"),
+  [],
+);
+
+// ---- 15.6 what `preview` turns off, and the related heading ---------------
+// Both controls lie on an unpublished post: a vote is accepted by the button
+// and discarded by the action (`publishedSlugExists`), and every share URL
+// points at an address that 404s until the post is published.
+for (const control of ['ArticleFeedback', 'ShareBlogs']) {
+  ok(
+    `${control} is gated on !preview`,
+    new RegExp(`!preview\\s*&&\\s*(\\(\\s*)?<${control}`).test(
+      ARTICLE_PAGE_CODE.replace(/\s+/g, ' '),
+    ),
+  );
+}
+ok('and the preview route passes the flag', /<ArticlePage[^>]*\spreview\b/.test(PREVIEW_CODE));
+
+// The related section reads ONE resolved flag. `selectBlogCards` filters an
+// unknown forced slug out and its `curated ?? …` fallback only fires when the
+// list was empty to begin with, so a curation whose every entry has since been
+// purged comes back as `[]` and used to render "a curated set of articles
+// chosen to extend the ideas in this piece" above an empty grid.
+{
+  const heading = stripComments(
+    region(
+      ARTICLE_PAGE_SRC,
+      'seperatorTitle="Related Articles"',
+      '<BlogPost posts={related}',
+      'the related-reads heading',
+    ),
+  );
+  eq(
+    'the related heading asks nothing about what was REQUESTED',
+    linesWith(heading, 'relatedSlugs'),
+    [],
+  );
+  eq(
+    'and the title, the accent and the description all read the resolved flag',
+    linesWith(heading, 'curatedRelated').length,
+    3,
+  );
+}
+ok(
+  'which is false when the CURATED read resolved to nothing',
+  ARTICLE_PAGE_CODE.includes('view.relatedSlugs.length > 0 && curatedCards.length > 0'),
+);
+
+// And what a curation that resolved to nothing falls back TO. Rendering nothing
+// there would throw away four internal links on a public page precisely when
+// the category has two dozen posts to offer, so the page reads the category
+// instead. Two ways in, and only the first is repairable at the data layer:
+// unpublishing a curated target leaves the join row while dropping the post
+// from `listPublishedSummaries`, and hard-deleting one cascades the join row
+// away while the referrer's FROZEN published snapshot keeps naming the dead
+// slug until somebody republishes it.
+{
+  const flat = ARTICLE_PAGE_CODE.replace(/\s+/g, ' ');
+  eq(
+    'selectBlogCards is called twice: the curated read, then the category fallback',
+    [...ARTICLE_PAGE_CODE.matchAll(/selectBlogCards\(/g)].length,
+    2,
+  );
+  ok(
+    'and the fallback fires on the CURATED read coming back empty',
+    flat.includes('view.relatedSlugs.length > 0 && curatedCards.length === 0'),
+  );
+  ok(
+    'asking for the category rather than the curated slugs again',
+    /curatedCards\.length === 0 \? await selectBlogCards\(\{ categorySlug: view\.category\.slug/.test(flat),
+  );
+  // The backstop. `BlogPost` renders "No related posts found for this blog."
+  // over an empty list, so a heading offering more of them above that sentence
+  // is one section contradicting itself. Today the fallback makes an empty list
+  // take a category holding only this post; the editor makes that a single form
+  // away.
+  ok(
+    'the whole section is dropped when even the fallback found nothing',
+    flat.includes('{related.length > 0 && ( <section'),
+  );
+}
+
+// ---- 15.7 member-visible copy carries no em dash --------------------------
+// The same sweep the doors and the editor get, over the two screens this task
+// added. Scanned over the whole stripped source rather than the literals
+// alone, because most of the copy here is JSX text.
+//
+// The house rule exempts one thing, and the revisions table uses it: the lone
+// `—` empty-value glyph in a table cell, which is a spreadsheet convention
+// rather than prose (`cadOrDash`, `?? '—'`). It is stripped by SHAPE, so a
+// glyph standing alone as an element's whole text is exempt and an em dash
+// anywhere inside a sentence is not.
+const withoutEmptyGlyph = (code: string) => code.replace(/>\s*—\s*</g, '><');
+//
+// `RevisionsTable.tsx` is deliberately NOT in this list: section 13's sweep
+// reads the whole `Admin/blogs/` directory, so it joined that one the moment
+// the file existed, which is the entire point of reading a directory instead
+// of a list. The two ROUTE files and ArticlePage.tsx are outside it.
+for (const [label, code] of [
+  ['the preview route', PREVIEW_CODE],
+  ['the revisions route', REVISIONS_PAGE_CODE],
+  ['ArticlePage.tsx', ARTICLE_PAGE_CODE],
+] as const) {
+  eq(
+    `no em dash anywhere in ${label} outside its comments`,
+    [...withoutEmptyGlyph(code).matchAll(/.{0,30}—.{0,30}/g)].map((match) => match[0]),
+    [],
+  );
+}
+
+// ---- 15.8 the history screen states only what it was told -----------------
+// A revision can exist that no pointer names and no completed save produced:
+// every door inserts the row before it claims the version and deletes it again
+// when it loses that race, so a crash in the gap leaves an orphan. Numbers can
+// therefore have gaps and the newest row is not necessarily the working copy.
+ok(
+  "the numeral a row prints is the version's own number",
+  REVISIONS_TABLE_CODE.includes('#{item.number}'),
+);
+eq(
+  'and the list is walked without a positional index at all',
+  [...REVISIONS_TABLE_CODE.matchAll(/items\.map\(\(([^)]*)\)/g)].map((m) => m[1].trim()),
+  ['item'],
+);
+// The no-router.refresh() rule is section 13's, and its directory sweep already
+// reaches this file, so it is not restated here.
+// A capped list states its remainder WITH THE NUMBER, or the cut passes for the
+// whole. The rule `foldLineCap` states on a money screen holds here for the
+// same reason: "and some older ones" is not a fact anybody can act on.
+{
+  const flat = REVISIONS_TABLE_CODE.replace(/\s+/g, ' ');
+  ok('the table renders a remainder line at all', flat.includes('{hidden > 0 && ('));
+  ok('and that line carries the count', /\{hidden\} older/.test(flat));
+  ok('beside how many it did show', flat.includes('Showing the newest {items.length}.'));
+}
+
+// And the page really uses it. The fold and the remainder line were both
+// pinned above, and the mutation that cut the page's own call to
+// `foldRevisionList` still left the check green: a correct fold nobody calls is
+// an uncapped list with a cap-shaped comment.
+ok(
+  'the revisions page caps through the shared fold',
+  /const \{ shown, hidden \} = foldRevisionList\(revisions\)/.test(REVISIONS_PAGE_CODE),
+);
+ok('and maps the CAPPED rows rather than all of them', REVISIONS_PAGE_CODE.includes('shown.map((rev)'));
+ok('handing the remainder down to the table', /hidden=\{hidden\}/.test(REVISIONS_PAGE_CODE));
+
+// The empty state names WHY a version gets written, so it has to name every
+// reason a writer can actually cause. `import` is the one exception: nothing
+// anybody does in the editor produces it, and a post with an empty history has
+// certainly not been imported. Read out of the reason LABELS rather than typed
+// again, so a seventh reason is a failure here instead of a sentence that
+// quietly stopped being the whole list.
+{
+  const emptyState = region(
+    REVISIONS_TABLE_SRC,
+    '<EmptyState',
+    '/>',
+    'the revisions empty state',
+  );
+  // WHOLE WORDS, because `published` is a substring of `unpublished`: with a
+  // plain `includes`, deleting ", published," from the sentence while keeping
+  // "unpublished" left this green. Exactly the bug `wordHits` was written for,
+  // and it was written twenty lines from here for the other half of it.
+  eq(
+    'the empty state names every reason a writer can cause',
+    BLOG_REVISION_REASONS.filter(
+      (reason) =>
+        reason !== 'import' &&
+        wordHits(emptyState, BLOG_REVISION_REASON_LABELS[reason].toLowerCase()) === 0,
+    ),
+    [],
+  );
+  ok('and says autosave is not one of them', emptyState.includes('Autosave writes none'));
+}
+
+// The screen and its skeleton quote ONE definition of every box. This file
+// exists because a skeleton is only worth having if each row is the height of
+// the row it stands in for, and the way that stops being true is a hand-copied
+// class string on one side: the first version of this skeleton inlined the
+// controls cell and came out short by its `mt-2` on a phone, six rows deep.
+{
+  const SKELETON_SRC = readRepoFile('../src/components/Admin/skeletons/AdminSkeletons.tsx');
+  const BOX_SRC = readRepoFile('../src/components/Admin/blogs/postBox.ts');
+  ok('read AdminSkeletons.tsx (drift guard)', SKELETON_SRC.length > 2000);
+  const boxTokens = [...BOX_SRC.matchAll(/^export const (revision[A-Za-z]+)/gm)].map((m) => m[1]);
+  ok('postBox exports the revision row tokens (fixture guard)', boxTokens.length >= 8);
+  // TWO occurrences, not one, and word-bounded, and both halves of that were
+  // found by mutation testing rather than reasoned out. `includes(token)` was
+  // satisfied by the IMPORT LINE alone, so inlining a class string over the
+  // token's one use left the check green with the now-unused import still
+  // sitting at the top (eslint only warns on that, so nothing else notices).
+  // And a bare substring test let `revisionChip` be satisfied by
+  // `revisionChipCell`, which is a different box: `wordHits`, above, is where
+  // that rule now lives for everything in this file.
+  for (const [label, code] of [
+    ['RevisionsTable.tsx', REVISIONS_TABLE_CODE],
+    ['BlogRevisionsSkeleton', stripComments(SKELETON_SRC)],
+  ] as const) {
+    eq(
+      `${label} imports every revision box token AND applies it`,
+      boxTokens.filter((token) => wordHits(code, token) < 2),
+      [],
+    );
+  }
+
+  // THE RESPONSIVE SHAPE, compared row against row.
+  //
+  // The token sweeps above cannot see this, because `hidden text-xs lg:block`
+  // and `lg:hidden` are not tokens: they are the three columns that vanish on a
+  // phone and the meta line that replaces them. Deleting all three wrappers
+  // from the skeleton, or its phone meta line, left every other assertion here
+  // green while putting the desktop shape on a 360px screen, which is the exact
+  // drift this whole file exists to prevent.
+  //
+  // Counted rather than listed, and compared BOTH ways: the skeleton is only
+  // right if it hides as many things as the row hides and shows as many as the
+  // row shows. The fixture guard is what stops it passing on two empty regions.
+  const rowRegion = region(
+    REVISIONS_TABLE_SRC,
+    '{items.map((item) => (',
+    '</ul>',
+    'the version row',
+  );
+  const skeletonRegion = region(
+    SKELETON_SRC,
+    '{Array.from({ length: 6 }).map((_, i) => (',
+    '</ul>',
+    'the version row skeleton',
+  );
+  for (const responsive of ['lg:block', 'lg:hidden'] as const) {
+    const inRow = occurrences(stripComments(rowRegion), responsive);
+    ok(`the version row really carries ${responsive} (fixture guard)`, inRow > 0);
+    eq(
+      `the skeleton hides and shows the same cells as the row (${responsive})`,
+      occurrences(stripComments(skeletonRegion), responsive),
+      inRow,
+    );
+  }
+
+  // And the other direction, which is the rule these files actually exist for:
+  // no COPY of a token's class string may sit beside the token. The "applies
+  // it" test above cannot see that, because inlining one of two uses leaves the
+  // other one satisfying it, which a mutation proved.
+  //
+  // Only the DISTINCTIVE values are swept. `revisionRowShell` is
+  // `'flex items-center'`, a string half the dashboard writes for its own
+  // reasons, and asserting on it would fail on innocent code in a file that
+  // holds twenty other surfaces' skeletons.
+  const boxValues = [...BOX_SRC.matchAll(/^export const revision[A-Za-z]+ =\s*\n?\s*'([^']{25,})';/gm)].map(
+    (m) => m[1],
+  );
+  ok('found the distinctive box values to sweep (fixture guard)', boxValues.length >= 4);
+  for (const [label, code] of [
+    ['RevisionsTable.tsx', REVISIONS_TABLE_CODE],
+    ['AdminSkeletons.tsx', stripComments(SKELETON_SRC)],
+  ] as const) {
+    eq(
+      `${label} carries no hand-copy of a revision box value`,
+      boxValues.filter((value) => code.includes(value)),
+      [],
+    );
+  }
+}
+
+// Both dates are resolved on the SERVER in the viewer's own zone. A formatter
+// with no zone resolves to the runtime's, which is UTC on Vercel.
+eq(
+  'the revisions page formats every date through the zoned helpers',
+  linesWith(REVISIONS_PAGE_CODE, 'Intl.DateTimeFormat').concat(
+    linesWith(REVISIONS_PAGE_CODE, 'toLocaleDateString'),
+    linesWith(REVISIONS_TABLE_CODE, 'new Date('),
+  ),
+  [],
+);
+// Section 13's directory sweep reaches this file, so the em-dash rule itself
+// is not restated. What section 15 owns is the EXEMPTION: the table is the
+// place that uses the empty-value glyph, and it must stay a lone glyph in a
+// cell rather than becoming a dash inside a sentence.
+eq(
+  'the table carries no em dash outside the empty-value glyph',
+  [...withoutEmptyGlyph(REVISIONS_TABLE_CODE).matchAll(/.{0,30}—.{0,30}/g)].map((m) => m[0]),
+  [],
+);
+eq(
+  'and that glyph stands alone in a cell, exactly once',
+  (REVISIONS_TABLE_CODE.match(/<span aria-hidden="true">—<\/span>/g) ?? []).length,
+  1,
+);
+ok(
+  "and in the viewer's own zone",
+  REVISIONS_PAGE_CODE.includes('viewerZone()') &&
+    REVISIONS_PAGE_CODE.includes('formatDateTime(tz,') &&
+    REVISIONS_PAGE_CODE.includes('formatRelative(tz,'),
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 12. The real statements, against Neon (--db)

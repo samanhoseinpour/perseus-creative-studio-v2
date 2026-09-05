@@ -18,7 +18,7 @@
  * `unknown` instead would make the snapshot this leaf builds unstorable in the
  * column it is built for. NOTHING here may become a value import.
  *
- * FOUR THINGS LIVE HERE, and each of them is silent when it is wrong:
+ * FIVE THINGS LIVE HERE, and each of them is silent when it is wrong:
  *
  *  1. `transitionProblem` — the readable guard in FRONT of migration 0045's
  *     three CHECK constraints. The constraints are the backstop; this is what
@@ -43,6 +43,16 @@
  *     cannot diverge. Its two instants are PARAMETERS for the reason stated on
  *     the function itself, and getting that wrong misdates a post everywhere
  *     at once while the sort order stays right.
+ *
+ *  5. `BLOG_PREVIEW_REVISION_PARAM` and `blogPreviewHref` — the one spelling
+ *     of the query key that pins the preview to a saved version. A link that
+ *     spells it any other way does not 404 and does not warn: `getDraftPost`
+ *     reads a missing key as "show the working row", so the writer proofreads
+ *     the current draft while believing they are reading the version they
+ *     clicked. The revision vocabulary beside it is the same kind of quiet:
+ *     a reason the pgEnum has and this leaf does not renders as `undefined`
+ *     on a chip, and `canRestoreRevision` disagreeing with the door behind it
+ *     is a button whose only outcome is a refusal.
  *
  * Run `node --import tsx scripts/check-blogs.mts` after touching any of it.
  */
@@ -294,6 +304,155 @@ export function slugLocked(post: { publishedAt: unknown | null }): boolean {
 /** The post's public path. Path only, no origin: pingIndexNow takes paths. */
 export function publicUrlFor(slug: string): string {
   return `/blogs/${slug}`;
+}
+
+// ── The version history ─────────────────────────────────────────────────────
+
+/**
+ * Must equal the `blog_revision_reason` pgEnum in src/db/schema.ts, in order,
+ * for `BLOG_POST_STATUSES`' reason: this leaf cannot value-import the schema
+ * (drizzle is not client-safe and the enum's values are a runtime array), so
+ * nothing in the app would notice the two drifting apart. What a member would
+ * meet instead is a chip on /admin/blogs/<id>/revisions reading `undefined`.
+ * scripts/check-blogs.mts imports both and asserts it.
+ */
+export const BLOG_REVISION_REASONS = [
+  'import',
+  'save',
+  'publish',
+  'schedule',
+  'unpublish',
+  'restore',
+] as const;
+
+export type BlogRevisionReason = (typeof BLOG_REVISION_REASONS)[number];
+
+/**
+ * What a writer sees a saved version called.
+ *
+ * Each one says WHY the version exists, because the number alone cannot: a
+ * mature post carries a dozen autosaves and two publishes, and "which of these
+ * is the one I want back" is answered by the reason, not by the count.
+ */
+export const BLOG_REVISION_REASON_LABELS: Record<BlogRevisionReason, string> = {
+  import: 'Imported',
+  save: 'Saved',
+  publish: 'Published',
+  schedule: 'Scheduled',
+  unpublish: 'Unpublished',
+  restore: 'Restored',
+};
+
+/** Which of the post's two pointers, if either, names this version. */
+export type BlogRevisionMarker = 'published' | 'pending';
+
+/** What each marker says. "Live now" rather than "Published", because the
+ *  reason chip beside it already uses that word for a different thing: the
+ *  reason says what somebody did, the marker says what the public is reading
+ *  at this moment. */
+export const BLOG_REVISION_MARKER_LABELS: Record<BlogRevisionMarker, string> = {
+  published: 'Live now',
+  pending: 'Goes live next',
+};
+
+/**
+ * At most ONE marker per row, and published wins.
+ *
+ * The two pointers are separate columns, so the type admits a row that both
+ * name. No door produces one today (a scheduled update points `pending` at a
+ * version that is by definition not the live one), but a total function has to
+ * answer for it, and the answer is the one the reader can act on: what the
+ * public is reading right now outranks what it will read later. Returning both
+ * would put two contradictory chips on one line.
+ */
+export function revisionMarker(row: {
+  isPublished: boolean;
+  isPending: boolean;
+}): BlogRevisionMarker | null {
+  if (row.isPublished) return 'published';
+  if (row.isPending) return 'pending';
+  return null;
+}
+
+/**
+ * How many versions the history screen draws before it starts saying "and N
+ * older ones".
+ *
+ * Every other list in this dashboard caps and states its remainder, and this
+ * one is the only list in the feature that grows monotonically: nothing ever
+ * deletes a revision, so a post edited weekly for two years is a page with a
+ * hundred rows and no bottom. 50 is well past what any post here carries
+ * today, so in practice nobody meets the fold.
+ */
+export const BLOG_REVISION_LIST_CAP = 50;
+
+/**
+ * The newest `cap` versions, and how many older ones were left out.
+ *
+ * `shown.length + hidden` always equals `rows.length`, which is the house
+ * no-silent-truncation rule (`foldLineCap`, `foldCellChips`): a capped list
+ * that does not say what it cut can pass for the whole, and here that would
+ * read as "this post has only ever been saved fifty times".
+ *
+ * It takes the rows already ordered, because `listRevisions` orders by number
+ * descending and re-deciding that here would be a second opinion about which
+ * end of the history is the interesting one.
+ */
+export function foldRevisionList<T>(
+  rows: readonly T[],
+  cap: number = BLOG_REVISION_LIST_CAP,
+): { shown: T[]; hidden: number } {
+  const shown = rows.slice(0, Math.max(0, cap));
+  return { shown, hidden: rows.length - shown.length };
+}
+
+/**
+ * Whether the version history may offer Restore at all.
+ *
+ * A MIRROR of `restoreRevision`'s own refusal, which is one status and one
+ * status only: a post in Trash is refused with "Restore the post first."
+ * Offering the button anyway would make it a control whose only outcome is a
+ * sentence saying it should not have been offered, which is the rule
+ * `blogEditorActions` and `blogRowActions` both follow. Pinned against the
+ * door's own source in scripts/check-blogs.mts, so widening the refusal there
+ * without widening it here fails the check rather than shipping a dead button.
+ */
+export function canRestoreRevision(status: BlogPostStatus): boolean {
+  return status !== 'trash';
+}
+
+// ── The two admin paths a post has beyond its editor ────────────────────────
+
+/**
+ * The query key the preview page reads, named ONCE.
+ *
+ * This is the one spelling in this feature whose mistake is completely silent.
+ * `getDraftPost` treats a missing key as "show the working row", so a link
+ * that writes `?rev=` or `?revisionId=` does not 404 and does not warn: it
+ * quietly previews the current draft while the reader believes they are
+ * proofreading the version they clicked.
+ */
+export const BLOG_PREVIEW_REVISION_PARAM = 'revision';
+
+/**
+ * The draft preview, optionally pinned to one saved version.
+ *
+ * An EMPTY or absent revision id yields the bare path rather than a dangling
+ * `?revision=`. `getDraftPost` already reads an empty value as "none given",
+ * so both spellings behave the same; emitting the empty one anyway would put a
+ * URL in the address bar that claims to name a version and does not.
+ *
+ * Ids are uuids straight from the database (every reader gates them on
+ * UUID_RE), so there is nothing here to escape.
+ */
+export function blogPreviewHref(postId: string, revisionId?: string | null): string {
+  const base = `/admin/blogs/${postId}/preview`;
+  return revisionId ? `${base}?${BLOG_PREVIEW_REVISION_PARAM}=${revisionId}` : base;
+}
+
+/** The post's saved versions. */
+export function blogRevisionsHref(postId: string): string {
+  return `/admin/blogs/${postId}/revisions`;
 }
 
 // ── Fingerprints ────────────────────────────────────────────────────────────

@@ -32,6 +32,7 @@ import {
 } from '@/components/Admin/blogs/postBox';
 import type { BlogEditorPost } from '@/components/Admin/blogs/postTypes';
 import { activityHistoryHref } from '@/lib/activityFilters';
+import { blogPreviewHref, blogRevisionsHref } from '@/lib/blogFields';
 import {
   BLOG_SAVE_STATE_LABELS,
   PRIMARY_ACTION_GATE,
@@ -130,7 +131,7 @@ export default function EditorTopBar({
         </Button>
 
         <a
-          href={`/admin/blogs/${post.id}/preview`}
+          href={blogPreviewHref(post.id)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-foreground/15 px-3 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.06]"
@@ -243,7 +244,7 @@ export default function EditorTopBar({
 
               <DropdownMenu.Item asChild>
                 <Link
-                  href={`/admin/blogs/${post.id}/revisions`}
+                  href={blogRevisionsHref(post.id)}
                   className={cn(menuItem, 'text-foreground')}
                 >
                   <LuSquareStack aria-hidden="true" className="size-3.5 shrink-0" />
