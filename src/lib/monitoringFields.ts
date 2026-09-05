@@ -261,6 +261,18 @@ export const CRON_JOBS = [
     label: 'Monitoring',
     description: 'Probes the dependencies, evaluates incidents, sends alerts',
   },
+  {
+    // Shares the monitoring slot deliberately. `parseCronSchedule` has no
+    // offset form, so `*/15` cannot be staggered off `*/15` without a fifth
+    // shape, and this database scales to zero: the monitoring probe has
+    // already woken it at exactly that minute, so a staggered blog job would
+    // be a second wake every hour for no benefit.
+    name: 'blog-publish',
+    path: '/api/cron/blog-publish',
+    schedule: '*/15 * * * *',
+    label: 'Scheduled posts',
+    description: 'Publishes blog posts whose scheduled time has come',
+  },
 ] as const satisfies readonly CronJobSpec[];
 
 export type CronJobName = (typeof CRON_JOBS)[number]['name'];

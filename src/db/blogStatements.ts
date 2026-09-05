@@ -707,11 +707,20 @@ export async function unpublishedLinkTargets(
  * It touches NO revision row. The schedule revision already carries the
  * intended instant in its typed `published_at` and in `snapshot.publishedAt`,
  * because the public date is read off the REVISION.
+ *
+ * `published_revision_id` is in the RETURNING because the cron has to build a
+ * real public reference for the post it just made live, and that reference
+ * carries a fingerprint over the snapshot a visitor now renders. Postgres
+ * RETURNING gives the NEW row, so `pending_revision_id` comes back null here
+ * while `published_revision_id` holds the id this statement just promoted —
+ * which is both the proof that the post now points at a readable revision (the
+ * WHERE required a non-null pending one) and the value the cron checks the
+ * snapshot it reads back against.
  */
 export async function publishDuePostRows(
   db: BlogDb,
   at: Date,
-): Promise<{ id: string; slug: string }[]> {
+): Promise<{ id: string; slug: string; publishedRevisionId: string | null }[]> {
   return db
     .update(blogPosts)
     .set({
@@ -730,5 +739,9 @@ export async function publishDuePostRows(
         isNotNull(blogPosts.pendingRevisionId),
       ),
     )
-    .returning({ id: blogPosts.id, slug: blogPosts.slug });
+    .returning({
+      id: blogPosts.id,
+      slug: blogPosts.slug,
+      publishedRevisionId: blogPosts.publishedRevisionId,
+    });
 }

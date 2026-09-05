@@ -100,14 +100,19 @@ import {
   buildSnapshot,
   contentChanged,
   newDraftSlug,
-  publicFingerprint,
   restoreTarget,
   slugLocked,
   transitionProblem,
   type BlogPostStatus,
   type BlogWorkingView,
 } from '@/lib/blogFields';
-import { invalidateBlog, refDates, type BlogRef } from '@/lib/blogInvalidate';
+import {
+  beforeRef,
+  hiddenRef,
+  identityOf,
+  invalidateBlog,
+  publishedRef,
+} from '@/lib/blogInvalidate';
 import {
   blogDraftSchema,
   blogPublishSchema,
@@ -229,7 +234,11 @@ export type BlogSaveInput = {
 // `BlogRef`, `refDates` and `invalidateBlog` were written HERE, with their
 // callers, and moved to `@/lib/blogInvalidate` when _actions/blogTaxonomy.ts
 // needed the same contract: a `'use server'` module may export only async
-// functions, so this file could not hand it over. See that module's header.
+// functions, so this file could not hand it over. The four ref BUILDERS
+// (`hiddenRef`, `publishedRef`, `beforeRef`, `identityOf`) followed them for
+// the same reason when the `blog-publish` route handler needed them, so what
+// a public reference to a post IS has one definition rather than one per
+// caller. See that module's header.
 
 // ── Create ──────────────────────────────────────────────────────────────────
 
@@ -789,54 +798,6 @@ async function unpublishedLinkWarning(doc: BlogDoc, ownSlug: string): Promise<st
  *  touching it. */
 const rowView = (post: AdminPost): BlogWorkingView => ({
   ...post.post,
-  categorySlug: post.category.slug,
-  authorSlug: post.author.slug,
-});
-
-/** A post nothing outside /admin can see. Cheap by construction: there is no
- *  fingerprint to build, because a post moving into or out of public has
- *  already answered "did anything change?" by moving. */
-const hiddenRef = (post: { slug: string; categorySlug: string; authorSlug: string }): BlogRef => ({
-  slug: post.slug,
-  categorySlug: post.categorySlug,
-  authorSlug: post.authorSlug,
-  isPublic: false,
-});
-
-/**
- * What the public was actually rendering, built from the PUBLISHED revision's
- * own snapshot rather than from the working row: a saved-but-unpublished
- * category or author move lives on the working row and has not reached a
- * visitor, so comparing against it would ping a URL whose bytes did not move.
- *
- * The `slug` is the exception and comes from the working row, because that is
- * the live URL. `slugLocked` pins it the moment a post is published, so the
- * two agree.
- */
-const publishedRef = (slug: string, snapshot: BlogRevisionSnapshot): BlogRef => ({
-  slug,
-  categorySlug: snapshot.categorySlug,
-  authorSlug: snapshot.authorSlug,
-  isPublic: true,
-  publicFingerprint: publicFingerprint(snapshot),
-  dates: refDates(snapshot),
-});
-
-/** The ref for a post as it stood BEFORE a transition: public only when its
- *  status really was `published`, which is the predicate the site reads. */
-const beforeRef = (
-  post: { slug: string; status: BlogPostStatus; categorySlug: string; authorSlug: string },
-  published: BlogRevisionSnapshot | null,
-): BlogRef =>
-  post.status === 'published' && published !== null
-    ? publishedRef(post.slug, published)
-    : hiddenRef(post);
-
-/** The identity half of an AdminPost, in the shape the two ref builders take
- *  (the bulk doors read the same fields through `postIdentitiesFor`). */
-const identityOf = (post: AdminPost) => ({
-  slug: post.post.slug,
-  status: post.post.status,
   categorySlug: post.category.slug,
   authorSlug: post.author.slug,
 });

@@ -107,6 +107,7 @@ import {
 import { BLOG_EDITOR_EXTENSIONS, overrideByName } from '@/lib/blogEditorExtensions';
 import { BLOG_NODE_ATTR_CODECS } from '@/lib/blogNodeHtml';
 import { articleImageSet, buildPostJsonLd } from '@/lib/blogJsonLd';
+import { CRON_JOBS } from '@/lib/monitoringFields';
 import type { BlogHero, PublishedPost } from '@/lib/blogStore';
 import {
   BLOG_POST_STATUSES,
@@ -2896,6 +2897,193 @@ ok(
 // and its snapshot), written when the schedule was set, because the public
 // date is read off the REVISION. The cron has nothing to write there.
 ok('publishDuePostRows touches no revision row', !PUBLISH_DUE.includes('blogPostRevisions'));
+// The RETURNING carries the revision the UPDATE just PROMOTED — Postgres
+// returns the NEW row, so `pending_revision_id` comes back null while
+// `published_revision_id` holds it. The cron needs it because the ref it
+// announces carries a fingerprint over the snapshot a visitor now renders, and
+// a placeholder there would work today (nothing compares a fingerprint while
+// the previous side is hidden) and rot the first time a scheduled update to an
+// already-live post ships.
+eq(
+  'publishDuePostRows returns the revision it promoted, and the id and slug the cron reads by',
+  [
+    /publishedRevisionId: blogPosts\.publishedRevisionId/.test(PUBLISH_DUE),
+    /id: blogPosts\.id/.test(PUBLISH_DUE),
+    /slug: blogPosts\.slug/.test(PUBLISH_DUE),
+  ],
+  [true, true, true],
+);
+
+// ── The cron that runs it ───────────────────────────────────────────────────
+//
+// A route handler cannot be imported here (it needs a CRON_SECRET request), so
+// what is left is its source. Every rule below is silent when broken, and the
+// first one is silent in the worst possible way: it fails on every WORKING run
+// and passes on every empty one, which looks healthy for weeks.
+
+const CRON_ROUTE_SRC = readRepoFile('../src/app/api/cron/blog-publish/route.ts');
+ok('read the blog-publish route (drift guard)', CRON_ROUTE_SRC.length > 1000);
+const CRON_ROUTE_CODE = stripComments(CRON_ROUTE_SRC);
+
+// THE trap, and it is swept over the WHOLE cron directory rather than this one
+// file, because the next person to reach for `updateTag` will be writing a
+// different cron and will be copying an editor door that legitimately uses it.
+// `updateTag` throws outside a server action — Next's own revalidate.js
+// refuses it when `workStore.page` ends in `/route`, error E872 — so a cron
+// that called it would publish every due row and THEN throw: runCron stamps
+// the job failed and returns a 500, the ping and the activity row never run,
+// and the site keeps serving the pre-publish snapshot for a whole TTL while
+// /admin/monitoring reddens every fifteen minutes.
+{
+  const dir = new URL('../src/app/api/cron/', import.meta.url);
+  const routes = readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map(
+      (entry) =>
+        [entry.name, stripComments(readFileSync(new URL(`${entry.name}/route.ts`, dir), 'utf8'))] as const,
+    );
+  // Vacuity guard: an empty or short read would make the sweep below trivially
+  // true, which is the one way a privacy- or availability-shaped sweep fails.
+  eq('every cron route was read (drift guard)', [routes.length >= CRON_JOBS.length, routes.every(([, code]) => code.length > 500)], [true, true]);
+  // "calls", not "names": the sweep reads COMMENT-STRIPPED source, which is
+  // what lets the blog route's own header name the trap seven times while the
+  // rule still bites on a single line of code.
+  eq(
+    'no cron route calls updateTag, which throws in a route handler',
+    routes.filter(([, code]) => wordHits(code, 'updateTag') > 0).map(([name]) => name),
+    [],
+  );
+  // The mirror of it: the one door a route handler MAY use is named where it
+  // has to be. Without this, deleting the invalidation entirely would satisfy
+  // the sweep above and publish posts the site never shows.
+  //
+  // `wordHits` and not `includes`, and this pair is why: the FORBIDDEN name is
+  // a PREFIX of the REQUIRED one. `!code.includes('invalidateBlog')` is
+  // unsatisfiable here — the correct file fails it — so whoever wrote it that
+  // way would delete the refusal rather than fix it, and the cron would be
+  // free to call the door that throws. A whole-word count is the only form in
+  // which this refusal can be stated at all.
+  eq(
+    'and the blog cron invalidates through the route-handler door',
+    [occurrences(CRON_ROUTE_CODE, 'invalidateBlogFromCron('), wordHits(CRON_ROUTE_CODE, 'invalidateBlog')],
+    [1, 0],
+  );
+}
+
+// scripts/check-monitoring.mts proves CRON_JOBS and vercel.json agree, both
+// ways. What neither of them can see is the route FILE: a handler calling
+// runCron under a name that is not its own stamps a DIFFERENT job's
+// monitoring_checks row, so the registry would report this job as never having
+// run while the other never looked late — two wrong answers from one typo.
+{
+  const job = CRON_JOBS.find((j) => j.name === 'blog-publish');
+  eq(
+    'blog-publish is a registered job and its route stamps its own name',
+    [job?.path, job?.schedule, CRON_ROUTE_CODE.includes(`runCron('${job?.name ?? ''}', request`)],
+    ['/api/cron/blog-publish', '*/15 * * * *', true],
+  );
+  ok("and it is rendered per request, never prerendered", CRON_ROUTE_CODE.includes("export const dynamic = 'force-dynamic'"));
+}
+
+// A zero-work day writes NO activity row. Three of the other four crons do the
+// same, which is exactly why activity_log can never answer "did it run?" and
+// the checks row runCron stamps is what does.
+{
+  // Sliced from inside the HANDLER, not from the top of the file: the imports
+  // name every one of these, so a file-start slice would count them and fail
+  // for the wrong reason — or, with the counts inverted, pass for one.
+  const from = CRON_ROUTE_CODE.indexOf("runCron('blog-publish'");
+  const cut = CRON_ROUTE_CODE.indexOf('const ids =');
+  ok('the early return sits between the handler and the reads (drift guard)', from > 0 && cut > from);
+  const early = CRON_ROUTE_CODE.slice(from, cut);
+  eq(
+    'nothing due RETURNS, writing no activity row and reading nothing further',
+    [
+      // The guard must EXIT, and the `return` is the whole assertion rather
+      // than a detail of it. Delete just that keyword's statement and every
+      // other clause here still holds — the condition is still written, the
+      // three names are still absent — while execution falls through on an
+      // empty run and files "Published 0 scheduled posts" every fifteen
+      // minutes: 96 rows a day, ~35,000 inside the 365-day retention window,
+      // into the feed this rule exists to keep clean.
+      /published\.length === 0\)\s*\{\s*return\b/.test(early),
+      wordHits(early, 'logSystemActivity'),
+      wordHits(early, 'postIdentitiesFor'),
+      wordHits(early, 'publishedRevisionsFor'),
+    ],
+    [true, 0, 0, 0],
+  );
+}
+
+// ONE row per RUN, not per post, and counts only. /admin/logs is a wider
+// audience than the blogs area, so a summary naming a title or a slug would
+// publish the editorial calendar to it — the rule every cron row follows.
+{
+  const row = stripComments(region(CRON_ROUTE_SRC, 'logSystemActivity(', '});', 'the cron activity row'));
+  const loop = stripComments(
+    region(CRON_ROUTE_SRC, 'for (const row of published) {', '\n      }\n', 'the cron invalidation loop'),
+  );
+  ok('the loop slice really is the loop (drift guard)', loop.includes('invalidateBlogFromCron('));
+  eq(
+    'one activity row per run, carrying counts and neither a title nor a slug',
+    [
+      occurrences(CRON_ROUTE_CODE, 'logSystemActivity('),
+      // ONE CALL SITE IS NOT ONE ROW. Counting sites catches a second call and
+      // misses the realistic refactor: move the existing call inside the
+      // per-post loop and the count stays at 1 while the job files one audit
+      // row per POST. The loop has to be shown not to contain it.
+      wordHits(loop, 'logSystemActivity'),
+      /payload: \{ count: published\.length \}/.test(row),
+      wordHits(row, 'title'),
+      wordHits(row, 'slug'),
+      wordHits(row, 'identity'),
+    ],
+    [1, 0, true, 0, 0, 0],
+  );
+}
+
+// ── The degradation floor ───────────────────────────────────────────────────
+//
+// The publish is one atomic UPDATE with no transaction round it, so by the time
+// the reads below it run, the rows are LIVE. An unguarded throw there — a cold
+// start on a scale-to-zero database, at the same minute as the probe that wakes
+// it — would reject the handler with nothing invalidated and no activity row,
+// and the retry fifteen minutes later would match nothing and report zero. The
+// posts would stay invisible for the store's whole 24-hour TTL while the alert
+// said "the cron threw". So the read-and-announce block degrades instead.
+eq(
+  'a failed read still invalidates coarsely, records the run and says so',
+  [
+    // The try must OPEN before the reads and the catch must reach the floor.
+    /const warnings: string\[\] = \[\];\s*try \{\s*const ids =/.test(CRON_ROUTE_CODE),
+    /catch \(error\) \{[\s\S]*?invalidateBlogCoarseFromCron\(\);\s*\}/.test(CRON_ROUTE_CODE),
+    // Through `reportCronStep`, which is the designed channel: one stdout line,
+    // one cron-source monitoring signal and the string for `warnings`, rather
+    // than a silent swallow.
+    wordHits(CRON_ROUTE_CODE, 'reportCronStep'),
+    // And the activity row is OUTSIDE the try, because "N posts published" is
+    // true whether or not the announcement worked.
+    CRON_ROUTE_CODE.indexOf('logSystemActivity(') > CRON_ROUTE_CODE.indexOf('invalidateBlogCoarseFromCron();'),
+  ],
+  [true, true, 2, true],
+);
+
+// The previous ref is `hiddenRef` and NOT nothing: a scheduled post is not
+// public, so the ping fires because the URL APPEARED. The current ref is built
+// from the snapshot the UPDATE promoted rather than from a placeholder, and
+// the read-back is checked against the RETURNING so a post republished
+// underneath the cron is reported rather than passed off as this run's work.
+eq(
+  'the cron announces a real published ref against a hidden one',
+  [
+    /invalidateBlogFromCron\(publishedRef\(identity\.slug, revision\.snapshot\), hiddenRef\(identity\)\)/.test(
+      CRON_ROUTE_CODE,
+    ),
+    CRON_ROUTE_CODE.includes('revision.id !== row.publishedRevisionId'),
+    wordHits(CRON_ROUTE_CODE, 'publicFingerprint'),
+  ],
+  [true, true, 0],
+);
 
 const RESTORE_REVISION = functionRegion(ACTIONS_SRC, 'export async function restoreRevision(', 'restoreRevision');
 ok(
@@ -4264,7 +4452,7 @@ const INVALIDATE_CODE = stripComments(INVALIDATE_SRC);
   eq(
     'refreshPublicBlog names the coarse tag and all three sitemap paths',
     [
-      refresh.includes('updateTag(BLOGS_TAG)'),
+      refresh.includes('tag(BLOGS_TAG)'),
       refresh.includes("revalidatePath('/sitemap.xml')"),
       refresh.includes("revalidatePath('/sitemaps/blogs.xml')"),
       refresh.includes("revalidatePath('/sitemaps/authors.xml')"),
@@ -4274,8 +4462,85 @@ const INVALIDATE_CODE = stripComments(INVALIDATE_SRC);
   // ONE definition, two callers. A door that spelled the tag set out again is
   // exactly how one screen goes stale while another refreshes, which is the
   // whole reason this module exists.
-  eq('and it is the only place the coarse tag is refreshed', occurrences(INVALIDATE_CODE, 'updateTag(BLOGS_TAG)'), 1);
-  eq('reached by both doors', occurrences(INVALIDATE_CODE, 'refreshPublicBlog();'), 2);
+  eq('and it is the only place the coarse tag is refreshed', occurrences(INVALIDATE_CODE, 'tag(BLOGS_TAG)'), 1);
+  eq(
+    'reached by all three doors, each through its own tag function',
+    [
+      occurrences(INVALIDATE_CODE, 'refreshPublicBlog(tag);'),
+      occurrences(INVALIDATE_CODE, 'refreshPublicBlog(actionTag);'),
+      occurrences(INVALIDATE_CODE, 'refreshPublicBlog(cronTag);'),
+    ],
+    [1, 1, 1],
+  );
+}
+{
+  // The cron's FLOOR: refresh every public blog surface, announce nothing. It
+  // is what a failed read degrades to, so the two things that would make it
+  // useless are pinned — using the action tag (which throws in a route
+  // handler, taking the fallback down with the thing it was catching) and
+  // announcing a URL it cannot describe.
+  const floor = stripComments(
+    region(INVALIDATE_SRC, 'export function invalidateBlogCoarseFromCron(', '\n}\n', 'invalidateBlogCoarseFromCron'),
+  );
+  eq(
+    'the cron floor refreshes through the cron tag and pings nothing',
+    [
+      floor.includes('refreshPublicBlog(cronTag);'),
+      floor.includes("revalidatePath('/admin', 'layout')"),
+      wordHits(floor, 'actionTag'),
+      wordHits(floor, 'pingIndexNow'),
+      wordHits(floor, 'blogTag'),
+    ],
+    [true, true, 0, 0, 0],
+  );
+}
+{
+  // THE WHOLE DIFFERENCE between the editor's invalidation and the cron's is
+  // one function, and this is what holds it to one. `updateTag` throws in a
+  // route handler (E872) and `revalidateTag` warns without its second
+  // argument, so a third call site of either — added for one caller, reachable
+  // by the other — is how the cron acquires the bug this split exists to
+  // prevent. Naming each exactly once, inside its own door, says that in the
+  // code rather than in a comment.
+  const actionDoor = stripComments(
+    region(INVALIDATE_SRC, 'export function invalidateBlog(', '\n}\n', 'invalidateBlog'),
+  );
+  const cronDoor = stripComments(
+    region(INVALIDATE_SRC, 'export function invalidateBlogFromCron(', '\n}\n', 'invalidateBlogFromCron'),
+  );
+  eq(
+    'updateTag and revalidateTag are each named exactly once, inside their own door',
+    [
+      occurrences(INVALIDATE_CODE, 'updateTag('),
+      occurrences(INVALIDATE_CODE, 'revalidateTag('),
+      /const actionTag: TagDoor = \(tag\) => updateTag\(tag\)/.test(INVALIDATE_CODE),
+      // `{ expire: 0 }` AND NOT `'max'`, and the difference is not stylistic.
+      // Traced through Next 16.2.10: a profile resolves to
+      // `durations = { expire: cacheLife.expire }`, and the cache handler then
+      // sets `stale = now` and `expired = now + expire * 1000`. `'max'` is the
+      // built-in 365-day profile, so it writes an expiry a YEAR out:
+      // `areTagsExpired` stays false and only `areTagsStale` flips, which is
+      // stale-while-revalidate — the first read after the cron is served the
+      // PRE-PUBLISH snapshot, on `/blogs` above all, which reads searchParams
+      // and renders per request. `{ expire: 0 }` writes `expired = now`, which
+      // is exactly what `updateTag` does, so the two doors really do invalidate
+      // identically. Run against Next's own handler: updateTag => expired=true;
+      // 'max' => expired=false, stale=true; { expire: 0 } => expired=true.
+      /const cronTag: TagDoor = \(tag\) => revalidateTag\(tag, \{ expire: 0 \}\)/.test(INVALIDATE_CODE),
+      // The trap spelled out, so nobody "simplifies" it back.
+      occurrences(INVALIDATE_CODE, "'max'"),
+    ],
+    [1, 1, true, true, 0],
+  );
+  eq(
+    'and both post doors fold through one apply, differing only in that function',
+    [
+      actionDoor.includes('applyBlogInvalidation(actionTag,'),
+      cronDoor.includes('applyBlogInvalidation(cronTag,'),
+      occurrences(INVALIDATE_CODE, 'function applyBlogInvalidation('),
+    ],
+    [true, true, 1],
+  );
 }
 {
   const taxonomy = stripComments(
@@ -4286,7 +4551,8 @@ const INVALIDATE_CODE = stripComments(INVALIDATE_SRC);
   // order `/blogs/authors` draws.
   ok(
     'invalidateBlogTaxonomy refreshes before it can return',
-    taxonomy.indexOf('refreshPublicBlog();') > 0 && !/\breturn\b/.test(taxonomy.slice(0, taxonomy.indexOf('refreshPublicBlog();'))),
+    taxonomy.indexOf('refreshPublicBlog(actionTag);') > 0 &&
+      !/\breturn\b/.test(taxonomy.slice(0, taxonomy.indexOf('refreshPublicBlog(actionTag);'))),
   );
   ok('and the admin tree with it', taxonomy.includes("revalidatePath('/admin', 'layout')"));
   // The ping is the half the caller gates, so an empty list must announce
@@ -4305,6 +4571,23 @@ eq(
   ],
   [true, false],
 );
+// The four REF BUILDERS followed it out of that file when the blog-publish
+// route needed them, and the reason is the same one, one level down: two
+// definitions of what a public reference IS, is how the cron and the editor
+// end up pinging different URLs for one post. So the actions must still USE
+// all four and DEFINE none of them.
+{
+  const builders = ['hiddenRef', 'publishedRef', 'beforeRef', 'identityOf'] as const;
+  eq(
+    'the four ref builders live in the shared module, and the actions only call them',
+    builders.map((name) => [
+      new RegExp(`export const ${name}\\b`).test(INVALIDATE_CODE),
+      new RegExp(`(const|function)\\s+${name}\\s*[=(]`).test(ACTIONS_CODE),
+      wordHits(ACTIONS_CODE, name) > 0,
+    ]),
+    builders.map(() => [true, false, true]),
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 13. The posts list screen
@@ -7919,9 +8202,21 @@ try {
         // account of every row it changed, so the remainder below is the only
         // thing that can see a real post this run consumed: prefix-filtering
         // before looking discards exactly the evidence the label claims.
-        const firstRun = (await publishDuePostRows(cronDb, now)).map((r) => r.slug);
+        const firstRunRows = await publishDuePostRows(cronDb, now);
+        const firstRun = firstRunRows.map((r) => r.slug);
         eq('db: the cron publishes exactly the due schedules', firstRun.filter((slug) => slug.startsWith(PREFIX)).sort(), [due.slug, again.slug].sort());
         eq('db: and it touched nothing else at all', firstRun.filter((slug) => !slug.startsWith(PREFIX)), []);
+        // The widened RETURNING, against the real database. Postgres returns
+        // the NEW row, so `published_revision_id` here is the revision this
+        // statement just promoted and `pending_revision_id` is already gone —
+        // which is the whole reason the cron can build a public reference with
+        // a real fingerprint instead of a placeholder. Asserted as PAIRS so a
+        // statement returning the right ids against the wrong slugs fails.
+        eq(
+          'db: and each returned row names the revision it just promoted',
+          firstRunRows.filter((r) => r.slug.startsWith(PREFIX)).map((r) => [r.slug, r.publishedRevisionId]).sort(),
+          [[due.slug, dueRev.id], [again.slug, againRev.id]].sort(),
+        );
         const flipped = await readIn(due.id);
         eq('db: the due post is published, pointer moved, schedule cleared', [flipped?.status, flipped?.publishedRevisionId, flipped?.pendingRevisionId, flipped?.publishAt], ['published', dueRev.id, null, null]);
         eq('db: and it is dated the instant it was scheduled for, not the run time', flipped?.publishedAt?.toISOString(), dayInstant.toISOString());
