@@ -478,7 +478,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
     ],
     tips: [
       'A post cannot publish into a category that has no search title and description of its own, since the category page it lives on would then carry no metadata either. Give the category both from "Categories" before publishing into it.',
-      'Editing a published post updates the live page immediately. Its "Updated" date only moves when the writing itself changes; a change to only the SEO fields updates the page just as much but leaves that date alone.',
+      'On a published post, "Update" is what puts your edits on the live page, and it takes effect straight away. Saving alone never does: it keeps your work here, where readers cannot see it. The "Updated" date is a separate thing again, and moves only when the writing itself changes, so an update to only the SEO fields changes the live page just as much but leaves that date alone.',
       'The first save of one of the older posts moves its word count, and with it the reading time on the live page. The editor says so once when it happens, with both numbers. Those posts were counted a different way before they reached the editor, which counts the article and its FAQ answers.',
       'Moving a live post to trash asks you to confirm first, since the page comes down the moment you do.',
       '"Delete permanently" also deletes every image that post used, and cannot be undone. Votes it collected before stay on the Feedback page, shown as "(removed post)".',
